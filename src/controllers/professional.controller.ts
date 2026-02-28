@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Professional } from "../models/Professional";
+import { generateToken } from "../utils/jwt";
 
 export const registerProfessional = async (req: Request, res: Response) => {
   try {
@@ -42,10 +43,14 @@ export const loginProfessional = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    res.status(200).json({
-      message: "Login successful",
-      id: professional._id,
+    const token = generateToken({
+      userId: professional.id,
       email: professional.email,
+    });
+
+    return res.status(200).json({
+      message: "Login successful",
+      token,
     });
   } catch (error) {
     console.error(error);
