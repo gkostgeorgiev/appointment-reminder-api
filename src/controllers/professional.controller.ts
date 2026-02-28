@@ -17,10 +17,16 @@ export const registerProfessional = async (req: Request, res: Response) => {
       profession,
     });
 
+    const token = generateToken({
+      userId: professional.id,
+      email: professional.email,
+    });
+
     res.status(201).json({
       id: professional._id,
       email: professional.email,
       profession: professional.profession,
+      token,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
