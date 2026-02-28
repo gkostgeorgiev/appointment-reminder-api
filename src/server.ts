@@ -4,6 +4,7 @@ import cors from "cors";
 import connectDB from "./config/db";
 
 import professionalRoutes from "./routes/professional.routes";
+import customerRoutes from "./routes/customer.routes";
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/professionals", professionalRoutes);
+app.use("/api/customers", customerRoutes);
 
 const PORT = process.env.PORT || 5000;
 
