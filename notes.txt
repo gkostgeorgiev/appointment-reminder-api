@@ -1,0 +1,6 @@
+This is a document containing dummy professionals
+
+User1: 
+email: john.smith@test.com
+password: 12345678
+profession: dentist

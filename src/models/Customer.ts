@@ -38,9 +38,9 @@ const customerSchema = new Schema<ICustomer>(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-customerSchema.index({ professional: 1 });
+customerSchema.index({ professional: 1, phone: 1 }, { unique: true });
 
 export const Customer = model<ICustomer>("Customer", customerSchema);

@@ -12,9 +12,7 @@ export const createCustomer = async (
     }
 
     const { firstName, lastName, phone, email } = req.body;
-    console.log('req.body: ', req.body);
-    console.log('firstname, lastname, phone, email: ', firstName, lastName, phone, email);
-
+    
     const customer = await Customer.create({
       firstName,
       lastName,
