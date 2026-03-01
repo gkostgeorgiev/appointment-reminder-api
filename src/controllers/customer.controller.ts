@@ -1,20 +1,17 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { MongoServerError } from "mongodb";
-import { AuthenticatedRequest } from "../middleware/authMiddleware";
-import { Customer, ICustomer } from "../models/Customer";
+import z from "zod";
+import { Customer } from "../models/Customer";
+import { updateCustomerSchema } from "../validators/customerSchemas";
 
 // @desc    Create customer
 // @route   POST /api/customers
 // @access  Private
 export const createCustomer = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
 ) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
     const { firstName, lastName, phone, email } = req.body;
 
     const customer = await Customer.create({
@@ -43,14 +40,10 @@ export const createCustomer = async (
 // @route   GET /api/customers
 // @access  Private
 export const getCustomers = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
 ) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
     const customers = await Customer.find({
       professional: req.user.userId,
     }).sort({ createdAt: -1 });
@@ -66,20 +59,14 @@ export const getCustomers = async (
 // @route   DELETE /api/customers/:id
 // @access  Private
 export const deleteCustomer = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
 ) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
     const deletedCustomer = await Customer.findOneAndDelete({
       _id: req.params.id,
       professional: req.user.userId,
     });
-
-    console.log("deleted Customer: ", deletedCustomer);
 
     if (!deletedCustomer) {
       return res.status(404).json({
@@ -100,24 +87,13 @@ export const deleteCustomer = async (
 // @route   PATCH /api/customers/:id
 // @access  Private
 export const updateCustomer = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
 ) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>["body"];
 
-    const { firstName, lastName, phone, email } = req.body;
-
-    const updateData: Partial<
-      Pick<ICustomer, "firstName" | "lastName" | "phone" | "email">
-    > = {};
-
-    if (firstName !== undefined) updateData.firstName = firstName;
-    if (lastName !== undefined) updateData.lastName = lastName;
-    if (phone !== undefined) updateData.phone = phone;
-    if (email !== undefined) updateData.email = email;
+    const updateData = req.validated!.body as UpdateCustomerInput;
 
     const updatedCustomer = await Customer.findOneAndUpdate(
       {
