@@ -7,18 +7,19 @@ import {
 } from "../controllers/customer.controller";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { validate } from "../middleware/validate";
+import { catchAsync } from "../utils/catchAsync";
 import { updateCustomerSchema } from "../validators/customerSchemas";
 
 const router = Router();
 
-router.get("/", authMiddleware, getCustomers);
-router.post("/", authMiddleware, createCustomer);
-router.delete("/:id", authMiddleware, deleteCustomer);
+router.get("/", authMiddleware, catchAsync(getCustomers));
+router.post("/", authMiddleware, catchAsync(createCustomer));
+router.delete("/:id", authMiddleware, catchAsync(deleteCustomer));
 router.patch(
   "/:id",
   authMiddleware,
   validate(updateCustomerSchema),
-  updateCustomer,
+  catchAsync(updateCustomer),
 );
 
 export default router;
