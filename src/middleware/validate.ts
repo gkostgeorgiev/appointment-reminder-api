@@ -1,8 +1,16 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodType, ZodError, z } from "zod";
 
+type ValidatedRequestShape = {
+  body?: unknown;
+  params?: unknown;
+  query?: unknown;
+};
+
 export const validate =
-  <T>(schema: ZodType<T>) =>
+  <T extends ValidatedRequestShape>(
+    schema: ZodType<T>,
+  ) =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
       const parsed = schema.parse({
@@ -11,7 +19,7 @@ export const validate =
         query: req.query,
       });
 
-      req.validated = parsed; // store safely
+      req.validated = parsed;
 
       next();
     } catch (error) {
