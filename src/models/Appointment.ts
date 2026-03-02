@@ -1,6 +1,6 @@
 import { Schema, model, Types, Document } from "mongoose";
 
-const appointmentStatuses = [
+export const appointmentStatuses = [
   "scheduled",
   "completed",
   "cancelled",
