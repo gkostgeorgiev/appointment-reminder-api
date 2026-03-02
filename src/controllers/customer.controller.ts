@@ -26,7 +26,7 @@ export const createCustomer = async (req: Request, res: Response) => {
 // @desc    Get all customers
 // @route   GET /api/customers
 // @access  Private
-export const getCustomers = async (req: Request, res: Response) => {
+export const getAllCustomers = async (req: Request, res: Response) => {
   const customers = await Customer.find({
     professional: req.user.userId,
   }).sort({ createdAt: -1 });

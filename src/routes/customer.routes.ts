@@ -2,18 +2,26 @@ import { Router } from "express";
 import {
   createCustomer,
   deleteCustomer,
-  getCustomers,
+  getAllCustomers,
   updateCustomer,
 } from "../controllers/customer.controller";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { validate } from "../middleware/validate";
 import { catchAsync } from "../utils/catchAsync";
-import { updateCustomerSchema } from "../validators/customerSchemas";
+import {
+  createCustomerSchema,
+  updateCustomerSchema,
+} from "../validators/customerSchemas";
 
 const router = Router();
 
-router.get("/", authMiddleware, catchAsync(getCustomers));
-router.post("/", authMiddleware, catchAsync(createCustomer));
+router.get("/", authMiddleware, catchAsync(getAllCustomers));
+router.post(
+  "/",
+  authMiddleware,
+  validate(createCustomerSchema),
+  catchAsync(createCustomer),
+);
 router.delete("/:id", authMiddleware, catchAsync(deleteCustomer));
 router.patch(
   "/:id",

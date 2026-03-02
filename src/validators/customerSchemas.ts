@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+export const createCustomerSchema = z.object({
+  body: z.object({
+    firstName: z.string().trim().min(1),
+    lastName: z.string().trim().min(1),
+    phone: z.string().trim().min(1),
+    email: z.string().trim().pipe(z.email()).optional(),
+  }).strict(),
+});
+
 export const updateCustomerSchema = z.object({
   body: z
     .object({
