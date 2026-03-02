@@ -28,14 +28,14 @@ router.post(
 router.delete(
   "/:id",
   authMiddleware,
-  validate(objectIdParam("id")),
+  validate(objectIdParam("id", "customer")),
   catchAsync(deleteCustomer),
 );
 
 router.patch(
   "/:id",
   authMiddleware,
-  validate(objectIdParam("id").and(updateCustomerSchema)),
+  validate(objectIdParam("id", "customer").and(updateCustomerSchema)),
   catchAsync(updateCustomer),
 );
 

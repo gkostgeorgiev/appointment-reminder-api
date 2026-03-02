@@ -2,14 +2,19 @@ import z from "zod";
 import { appointmentStatuses } from "../models/Appointment";
 import { objectIdParam, objectIdSchema } from "./commonSchemas";
 
+export const futureDateSchema = z
+  .iso
+  .datetime()
+  .refine((val) => new Date(val) > new Date(), {
+    message: "Appointment must be in the future",
+  });
+
 export const createAppointmentSchema = z.object({
   body: z
     .object({
       customer: objectIdSchema("customer"),
 
-      date: z.iso.datetime().refine((val) => new Date(val) > new Date(), {
-        message: "Appointment must be in the future",
-      }),
+      date: futureDateSchema,
       duration: z.number().int().min(1),
 
       service: z.string().trim().optional(),
@@ -24,7 +29,7 @@ export const updateAppointmentSchema = z.object({
   body: z
     .object({
       customer: objectIdSchema("customer").optional(),
-      date: z.iso.datetime().optional(),
+      date: futureDateSchema.optional(),
       duration: z.number().int().min(1).optional(),
       service: z.string().trim().optional(),
       notes: z.string().trim().optional(),

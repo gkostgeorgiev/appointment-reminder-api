@@ -7,8 +7,8 @@ import {
   updateCustomerSchema,
 } from "../validators/customerSchemas";
 
-type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>["body"];
 type CreateCustomerInput = z.infer<typeof createCustomerSchema>["body"];
+type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>["body"];
 
 // @desc    Create customer
 // @route   POST /api/customers
