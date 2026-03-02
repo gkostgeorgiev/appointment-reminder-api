@@ -35,7 +35,7 @@ router.delete(
 router.patch(
   "/:id",
   authMiddleware,
-  validate(objectIdParam("id").extend(updateCustomerSchema)),
+  validate(objectIdParam("id").and(updateCustomerSchema)),
   catchAsync(updateCustomer),
 );
 

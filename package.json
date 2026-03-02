@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon --watch src --signal SIGTERM --exec tsx src/server.ts",
+    "kill": "taskkill //F //IM node.exe || true",
     "start": "node dist/server.js"
   },
   "keywords": [],
