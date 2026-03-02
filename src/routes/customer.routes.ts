@@ -12,21 +12,30 @@ import {
   createCustomerSchema,
   updateCustomerSchema,
 } from "../validators/customerSchemas";
+import { objectIdParam } from "../validators/commonSchemas";
 
 const router = Router();
 
 router.get("/", authMiddleware, catchAsync(getAllCustomers));
+
 router.post(
   "/",
   authMiddleware,
   validate(createCustomerSchema),
   catchAsync(createCustomer),
 );
-router.delete("/:id", authMiddleware, catchAsync(deleteCustomer));
+
+router.delete(
+  "/:id",
+  authMiddleware,
+  validate(objectIdParam("id")),
+  catchAsync(deleteCustomer),
+);
+
 router.patch(
   "/:id",
   authMiddleware,
-  validate(updateCustomerSchema),
+  validate(objectIdParam("id").extend(updateCustomerSchema)),
   catchAsync(updateCustomer),
 );
 
