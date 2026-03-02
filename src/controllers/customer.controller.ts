@@ -2,15 +2,19 @@ import { Request, Response } from "express";
 import z from "zod";
 import { Customer } from "../models/Customer";
 import { ErrorResponse } from "../utils/errorResponse";
-import { updateCustomerSchema } from "../validators/customerSchemas";
+import {
+  createCustomerSchema,
+  updateCustomerSchema,
+} from "../validators/customerSchemas";
 
 type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>["body"];
+type CreateCustomerInput = z.infer<typeof createCustomerSchema>["body"];
 
 // @desc    Create customer
 // @route   POST /api/customers
 // @access  Private
 export const createCustomer = async (req: Request, res: Response) => {
-  const { firstName, lastName, phone, email } = req.body;
+  const { firstName, lastName, phone, email } = req.validated!.body as CreateCustomerInput;
 
   const customer = await Customer.create({
     firstName,
@@ -28,7 +32,7 @@ export const createCustomer = async (req: Request, res: Response) => {
 // @access  Private
 export const getAllCustomers = async (req: Request, res: Response) => {
   const customers = await Customer.find({
-    professional: req.user.userId,
+    professional: req.user!.userId,
   }).sort({ createdAt: -1 });
 
   return res.status(200).json(customers);
@@ -40,7 +44,7 @@ export const getAllCustomers = async (req: Request, res: Response) => {
 export const deleteCustomer = async (req: Request, res: Response) => {
   const deletedCustomer = await Customer.findOneAndDelete({
     _id: req.params.id,
-    professional: req.user.userId,
+    professional: req.user!.userId,
   });
 
   if (!deletedCustomer) {

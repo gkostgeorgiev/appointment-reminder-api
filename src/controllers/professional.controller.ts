@@ -1,65 +1,56 @@
 import { Request, Response } from "express";
+import z from "zod";
 import { Professional } from "../models/Professional";
+import { ErrorResponse } from "../utils/errorResponse";
 import { generateToken } from "../utils/jwt";
+import { loginProfessionalSchema, registerProfessionalSchema } from "../validators/professionalSchemas";
+
+type RegisterInput = z.infer<typeof registerProfessionalSchema>["body"];
+type LoginInput = z.infer<typeof loginProfessionalSchema>["body"];
 
 export const registerProfessional = async (req: Request, res: Response) => {
-  try {
-    const { email, password, profession } = req.body;
+  const { email, password, profession } = req.validated!.body as RegisterInput;
+  const professional = await Professional.create({
+    email,
+    password,
+    profession,
+  });
 
-    const existing = await Professional.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ message: "Email already in use" });
-    }
+  const token = generateToken({
+    userId: professional.id,
+    email: professional.email,
+  });
 
-    const professional = await Professional.create({
-      email,
-      password,
-      profession,
-    });
-
-    const token = generateToken({
-      userId: professional.id,
-      email: professional.email,
-    });
-
-    res.status(201).json({
-      id: professional._id,
-      email: professional.email,
-      profession: professional.profession,
-      token,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
+  return res.status(201).json({
+    id: professional._id,
+    email: professional.email,
+    profession: professional.profession,
+    token,
+  });
 };
 
 export const loginProfessional = async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.validated!.body as LoginInput;
 
-    const professional = await Professional.findOne({ email });
+  const professional = await Professional.findOne({ email });
 
-    if (!professional) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const isMatch = await professional.comparePassword(password);
-
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const token = generateToken({
-      userId: professional.id,
-      email: professional.email,
-    });
-
-    return res.status(200).json({
-      message: "Login successful",
-      token,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+  if (!professional) {
+    throw new ErrorResponse("Invalid credentials", 401);
   }
+
+  const isMatch = await professional.comparePassword(password);
+
+  if (!isMatch) {
+    throw new ErrorResponse("Invalid credentials", 401);
+  }
+
+  const token = generateToken({
+    userId: professional.id,
+    email: professional.email,
+  });
+
+  return res.status(200).json({
+    message: "Login successful",
+    token,
+  });
 };
