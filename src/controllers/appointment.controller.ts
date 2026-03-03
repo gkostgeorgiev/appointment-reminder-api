@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import z from "zod";
 import { Appointment } from "../models/Appointment";
 import { Customer } from "../models/Customer";
+import { sendResponse } from "../utils/apiResponse";
 import { ErrorResponse } from "../utils/errorResponse";
 import { createAppointmentSchema } from "../validators/appointmentSchema";
 
@@ -32,8 +33,5 @@ export const createAppointment = async (req: Request, res: Response) => {
     notes,
   });
 
-  res.status(201).json({
-    success: true,
-    data: appointment,
-  });
+  return sendResponse(res, 201, appointment);
 };

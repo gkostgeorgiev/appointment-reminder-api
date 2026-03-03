@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import z from "zod";
 import { Customer } from "../models/Customer";
+import { sendResponse } from "../utils/apiResponse";
 import { ErrorResponse } from "../utils/errorResponse";
 import {
   createCustomerSchema,
@@ -14,7 +15,8 @@ type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>["body"];
 // @route   POST /api/customers
 // @access  Private
 export const createCustomer = async (req: Request, res: Response) => {
-  const { firstName, lastName, phone, email } = req.validated!.body as CreateCustomerInput;
+  const { firstName, lastName, phone, email } = req.validated!
+    .body as CreateCustomerInput;
 
   const customer = await Customer.create({
     firstName,
@@ -24,7 +26,7 @@ export const createCustomer = async (req: Request, res: Response) => {
     professional: req.user!.userId,
   });
 
-  return res.status(201).json(customer);
+  return sendResponse(res, 201, customer);
 };
 
 // @desc    Get all customers
@@ -35,7 +37,7 @@ export const getAllCustomers = async (req: Request, res: Response) => {
     professional: req.user!.userId,
   }).sort({ createdAt: -1 });
 
-  return res.status(200).json(customers);
+  return sendResponse(res, 200, customers);
 };
 
 // @desc    Delete a customer
@@ -51,7 +53,7 @@ export const deleteCustomer = async (req: Request, res: Response) => {
     throw new ErrorResponse("Customer not found", 404);
   }
 
-  return res.status(200).json({
+  return sendResponse(res, 200, {
     message: `Customer ${deletedCustomer.firstName} ${deletedCustomer.lastName} deleted successfully`,
   });
 };
@@ -75,5 +77,5 @@ export const updateCustomer = async (req: Request, res: Response) => {
     throw new ErrorResponse("Customer not found", 404);
   }
 
-  return res.status(200).json(updatedCustomer);
+  return sendResponse(res, 200, updatedCustomer);
 };
