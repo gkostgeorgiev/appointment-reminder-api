@@ -53,9 +53,7 @@ export const deleteCustomer = async (req: Request, res: Response) => {
     throw new ErrorResponse("Customer not found", 404);
   }
 
-  return sendResponse(res, 200, {
-    message: `Customer ${deletedCustomer.firstName} ${deletedCustomer.lastName} deleted successfully`,
-  });
+  return sendResponse(res, 200);
 };
 
 // @desc    Update a customer

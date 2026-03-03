@@ -33,7 +33,8 @@ export const errorHandler = (
   }
 
   res.status(statusCode).json({
-    success: false,
+    ok: false,
+    status: statusCode,
     message,
   });
 };

@@ -60,7 +60,6 @@ export const loginProfessional = async (req: Request, res: Response) => {
   });
 
   return sendResponse(res, 200, {
-    message: "Login successful",
     token,
   });
 };

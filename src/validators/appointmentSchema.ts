@@ -40,3 +40,19 @@ export const updateAppointmentSchema = z.object({
       message: "At least one field must be provided for update",
     }),
 });
+
+export const getAppointmentsSchema = z.object({
+  query: z
+    .object({
+      start: z.iso.datetime().optional(),
+      end: z.iso.datetime().optional(),
+    })
+    .refine(
+      (data) =>
+        !(data.start && data.end) ||
+        new Date(data.start) <= new Date(data.end),
+      {
+        message: "Start date must be before end date",
+      }
+    ),
+});
