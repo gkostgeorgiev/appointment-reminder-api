@@ -1,9 +1,15 @@
 import { Router } from "express";
-import { getAppointments } from "../controllers/appointment.controller";
+import {
+  createAppointment,
+  getAppointments,
+} from "../controllers/appointment.controller";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { validate } from "../middleware/validate";
 import { catchAsync } from "../utils/catchAsync";
-import { getAppointmentsSchema } from "../validators/appointmentSchema";
+import {
+  createAppointmentSchema,
+  getAppointmentsSchema,
+} from "../validators/appointmentSchema";
 
 const router = Router();
 
@@ -13,3 +19,12 @@ router.get(
   validate(getAppointmentsSchema),
   catchAsync(getAppointments),
 );
+
+router.post(
+  "/",
+  authMiddleware,
+  validate(createAppointmentSchema),
+  catchAsync(createAppointment),
+);
+
+export default router;

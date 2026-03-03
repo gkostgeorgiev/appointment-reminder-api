@@ -2,8 +2,7 @@ import z from "zod";
 import { appointmentStatuses } from "../models/Appointment";
 import { objectIdParam, objectIdSchema } from "./commonSchemas";
 
-export const futureDateSchema = z
-  .iso
+export const futureDateSchema = z.iso
   .datetime()
   .refine((val) => new Date(val) > new Date(), {
     message: "Appointment must be in the future",
@@ -44,15 +43,29 @@ export const updateAppointmentSchema = z.object({
 export const getAppointmentsSchema = z.object({
   query: z
     .object({
-      start: z.iso.datetime().optional(),
-      end: z.iso.datetime().optional(),
+      from: z.iso.date().optional(),
+      to: z.iso.date().optional(),
+      date: z.iso.date().optional(),
+      range: z.enum(["today", "week", "month"]).optional(),
     })
     .refine(
-      (data) =>
-        !(data.start && data.end) ||
-        new Date(data.start) <= new Date(data.end),
+      (data) => {
+        const filtersUsed =
+          Number(!!data.date) +
+          Number(!!data.range) +
+          Number(!!data.from || !!data.to);
+
+        return filtersUsed <= 1;
+      },
       {
-        message: "Start date must be before end date",
-      }
+        message: "Use only one filtering method: date, range, or from/to",
+      },
+    )
+    .refine(
+      (data) =>
+        !(data.from && data.to) || new Date(data.from) <= new Date(data.to),
+      {
+        message: "From date must be before To date",
+      },
     ),
 });

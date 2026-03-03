@@ -4,6 +4,7 @@ import express from "express";
 
 import connectDB from "./config/db";
 import { errorHandler } from "./middleware/errorHandler";
+import appointmentRoutes from "./routes/appointment.routes";
 import customerRoutes from "./routes/customer.routes";
 import professionalRoutes from "./routes/professional.routes";
 
@@ -23,6 +24,7 @@ app.get("/", (_req, res) => {
 
 app.use("/api/professionals", professionalRoutes);
 app.use("/api/customers", customerRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 app.use(errorHandler);
 

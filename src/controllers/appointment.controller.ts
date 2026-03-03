@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
+import { FilterQuery } from "mongoose";
 import z from "zod";
-import { Appointment } from "../models/Appointment";
+import { Appointment, IAppointment } from "../models/Appointment";
 import { Customer } from "../models/Customer";
 import { sendResponse } from "../utils/apiResponse";
+import { getDateRange, getEndOfDay, getStartOfDay } from "../utils/dateUtils";
 import { ErrorResponse } from "../utils/errorResponse";
 import {
   createAppointmentSchema,
@@ -44,21 +46,37 @@ export const createAppointment = async (req: Request, res: Response) => {
 // @route   GET /api/appointments
 // @access  Private
 export const getAppointments = async (req: Request, res: Response) => {
-  const { start, end } = req.validated!.query as GetAppointmentsQuery;
+  const { from, to, date, range } = req.validated!
+    .query as GetAppointmentsQuery;
 
-  const filter: any = {
+  const filter: FilterQuery<IAppointment> = {
     professional: req.user!.userId,
   };
 
-  if (start || end) {
-    filter.date = {};
+  if (range) {
+    const { start, end } = getDateRange(range);
 
-    if (start) {
-      filter.date.$gte = new Date(start);
+    filter.date = { $gte: start, $lte: end };
+  } else if (date) {
+    const startOfDay = getStartOfDay(new Date(date));
+
+    const endOfDay = getEndOfDay(new Date(date));
+
+    filter.date = {
+      $gte: startOfDay,
+      $lte: endOfDay,
+    };
+  } else if (from || to) {
+    filter.date = {} as FilterQuery<IAppointment>["date"];
+
+    if (from) {
+      const start = getStartOfDay(new Date(from));
+      filter.date.$gte = start;
     }
 
-    if (end) {
-      filter.date.$lte = new Date(end);
+    if (to) {
+      const end = getEndOfDay(new Date(to));
+      filter.date.$lte = end;
     }
   }
 
