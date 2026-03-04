@@ -9,10 +9,12 @@ import { ErrorResponse } from "../utils/errorResponse";
 import {
   createAppointmentSchema,
   getAppointmentsSchema,
+  updateAppointmentSchema,
 } from "../validators/appointmentSchema";
 
 type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>["body"];
 type GetAppointmentsQuery = z.infer<typeof getAppointmentsSchema>["query"];
+type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>["body"];
 
 // @desc    Create appointment
 // @route   POST /api/appointments
@@ -85,4 +87,53 @@ export const getAppointments = async (req: Request, res: Response) => {
     .populate("customer", "firstName lastName phone email");
 
   return sendResponse(res, 200, appointments);
+};
+
+// @desc    Update single appointment
+// @route   PATCH /api/appointments/:id
+// @access  Private
+export const updateAppointment = async (req: Request, res: Response) => {
+  const updateData = req.validated!.body as UpdateAppointmentInput;
+
+  if (updateData.customer) {
+    const customer = await Customer.findOne({
+      _id: updateData.customer,
+      professional: req.user!.userId,
+    });
+
+    if (!customer) {
+      throw new ErrorResponse("Customer not found", 404);
+    }
+  }
+
+  const appointment = await Appointment.findOneAndUpdate(
+    {
+      _id: req.params.id,
+      professional: req.user!.userId,
+    },
+    updateData,
+    { new: true, runValidators: true },
+  );
+
+  if (!appointment) {
+    throw new ErrorResponse("Appointment not found", 404);
+  }
+
+  return sendResponse(res, 200, appointment);
+};
+
+// @desc    Delete single appointment
+// @route   DELETE /api/appointments/:id
+// @access  Private
+export const deleteAppointment = async (req: Request, res: Response) => {
+  const appointment = await Appointment.findOneAndDelete({
+    _id: req.params.id,
+    professional: req.user!.userId,
+  });
+
+  if (!appointment) {
+    throw new ErrorResponse("Appointment not found", 404);
+  }
+
+  return sendResponse(res, 204);
 };

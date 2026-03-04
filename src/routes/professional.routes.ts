@@ -15,11 +15,13 @@ router.post(
   validate(registerProfessionalSchema),
   catchAsync(registerProfessional),
 );
+
 router.post(
   "/login",
   validate(loginProfessionalSchema),
   catchAsync(loginProfessional),
 );
+
 router.get(
   "/me",
   authMiddleware,

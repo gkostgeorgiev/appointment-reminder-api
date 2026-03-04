@@ -9,3 +9,8 @@ User2:
 "email": "mary.smith@test.com",
 "password": "12345678",
 "profession": "dentist"
+
+User3:
+"email": "susan.smith@test.com",
+"password": "12345678",
+"profession": "dentist"
