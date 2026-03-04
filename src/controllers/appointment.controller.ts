@@ -4,7 +4,12 @@ import z from "zod";
 import { Appointment, IAppointment } from "../models/Appointment";
 import { Customer } from "../models/Customer";
 import { sendResponse } from "../utils/apiResponse";
-import { getDateRange, getEndOfDay, getStartOfDay } from "../utils/dateUtils";
+import {
+  getAppointmentEnd,
+  getDateRange,
+  getEndOfDay,
+  getStartOfDay,
+} from "../utils/dateUtils";
 import { ErrorResponse } from "../utils/errorResponse";
 import {
   createAppointmentSchema,
@@ -30,6 +35,16 @@ export const createAppointment = async (req: Request, res: Response) => {
 
   if (!existing) {
     throw new ErrorResponse("Customer not found", 404);
+  }
+
+  const hasConflict = await hasAppointmentConflict(
+    req.user!.userId,
+    new Date(start),
+    duration,
+  );
+
+  if (hasConflict) {
+    throw new ErrorResponse("Appointment overlaps with another booking", 409);
   }
 
   const appointment = await Appointment.create({
@@ -103,6 +118,31 @@ export const updateAppointment = async (req: Request, res: Response) => {
     }
   }
 
+  const existing = await Appointment.findOne({
+    _id: req.params.id,
+    professional: req.user!.userId,
+  });
+
+  if (!existing) {
+    throw new ErrorResponse("Appointment not found", 404);
+  }
+
+  const start = updateData.start
+    ? new Date(updateData.start)
+    : existing.start;
+  const duration = updateData.duration ?? existing.duration;
+
+  const hasConflict = await hasAppointmentConflict(
+    req.user!.userId,
+    start,
+    duration,
+    existing._id.toString(),
+  );
+
+  if (hasConflict) {
+    throw new ErrorResponse("Appointment overlaps with another booking", 409);
+  }
+
   const appointment = await Appointment.findOneAndUpdate(
     {
       _id: req.params.id,
@@ -133,4 +173,29 @@ export const deleteAppointment = async (req: Request, res: Response) => {
   }
 
   return sendResponse(res, 204);
+};
+
+export const hasAppointmentConflict = async (
+  professionalId: string,
+  start: Date,
+  duration: number,
+  excludeAppointmentId?: string,
+) => {
+  const end = getAppointmentEnd(start, duration);
+
+  const query: FilterQuery<IAppointment> & { $expr?: any } = {
+    professional: professionalId,
+    start: { $lt: end },
+    $expr: {
+      $gt: [{ $add: ["$start", { $multiply: ["$duration", 60000] }] }, start],
+    },
+  };
+
+  if (excludeAppointmentId) {
+    query._id = { $ne: excludeAppointmentId };
+  }
+
+  const conflict = await Appointment.exists(query);
+
+  return !!conflict;
 };
