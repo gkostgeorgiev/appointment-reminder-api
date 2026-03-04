@@ -11,7 +11,7 @@ export interface IAppointment extends Document {
   professional: Types.ObjectId;
   customer: Types.ObjectId;
 
-  date: Date;
+  start: Date;
   duration: number;
 
   service?: string;
@@ -35,7 +35,7 @@ const appointmentSchema = new Schema(
       ref: "Customer",
       required: true,
     },
-    date: {
+    start: {
       type: Date,
       required: true,
     },
@@ -61,7 +61,7 @@ const appointmentSchema = new Schema(
   { timestamps: true },
 );
 
-appointmentSchema.index({ professional: 1, date: 1 });
+appointmentSchema.index({ professional: 1, start: 1 });
 
 export const Appointment = model<IAppointment>(
   "Appointment",

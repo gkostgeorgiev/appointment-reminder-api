@@ -20,7 +20,7 @@ type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>["body"];
 // @route   POST /api/appointments
 // @access  Private
 export const createAppointment = async (req: Request, res: Response) => {
-  const { customer, date, duration, service, notes } = req.validated!
+  const { customer, start, duration, service, notes } = req.validated!
     .body as CreateAppointmentInput;
 
   const existing = await Customer.findOne({
@@ -35,7 +35,7 @@ export const createAppointment = async (req: Request, res: Response) => {
   const appointment = await Appointment.create({
     professional: req.user!.userId,
     customer,
-    date: new Date(date),
+    start: new Date(start),
     duration,
     service,
     notes,
@@ -48,7 +48,7 @@ export const createAppointment = async (req: Request, res: Response) => {
 // @route   GET /api/appointments
 // @access  Private
 export const getAppointments = async (req: Request, res: Response) => {
-  const { from, to, date, range } = req.validated!
+  const { from, to, start, range } = req.validated!
     .query as GetAppointmentsQuery;
 
   const filter: FilterQuery<IAppointment> = {
@@ -56,34 +56,31 @@ export const getAppointments = async (req: Request, res: Response) => {
   };
 
   if (range) {
-    const { start, end } = getDateRange(range);
+    const { rangeStart, rangeEnd } = getDateRange(range);
 
-    filter.date = { $gte: start, $lte: end };
-  } else if (date) {
-    const startOfDay = getStartOfDay(new Date(date));
+    filter.start = { $gte: rangeStart, $lte: rangeEnd };
+  } else if (start) {
+    const startOfDay = getStartOfDay(new Date(start));
+    const endOfDay = getEndOfDay(new Date(start));
 
-    const endOfDay = getEndOfDay(new Date(date));
-
-    filter.date = {
+    filter.start = {
       $gte: startOfDay,
       $lte: endOfDay,
     };
   } else if (from || to) {
-    filter.date = {} as FilterQuery<IAppointment>["date"];
+    filter.start = {} as FilterQuery<IAppointment>["start"];
 
     if (from) {
-      const start = getStartOfDay(new Date(from));
-      filter.date.$gte = start;
+      filter.start.$gte = getStartOfDay(new Date(from));
     }
 
     if (to) {
-      const end = getEndOfDay(new Date(to));
-      filter.date.$lte = end;
+      filter.start.$lte = getEndOfDay(new Date(to));
     }
   }
 
   const appointments = await Appointment.find(filter)
-    .sort({ date: 1 })
+    .sort({ start: 1 })
     .populate("customer", "firstName lastName phone email");
 
   return sendResponse(res, 200, appointments);

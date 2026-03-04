@@ -13,7 +13,7 @@ export const createAppointmentSchema = z.object({
     .object({
       customer: objectIdSchema("customer"),
 
-      date: futureDateSchema,
+      start: futureDateSchema,
       duration: z.number().int().min(1),
 
       service: z.string().trim().optional(),
@@ -28,7 +28,7 @@ export const updateAppointmentSchema = z.object({
   body: z
     .object({
       customer: objectIdSchema("customer").optional(),
-      date: futureDateSchema.optional(),
+      start: futureDateSchema.optional(),
       duration: z.number().int().min(1).optional(),
       service: z.string().trim().optional(),
       notes: z.string().trim().optional(),
@@ -45,13 +45,13 @@ export const getAppointmentsSchema = z.object({
     .object({
       from: z.iso.date().optional(),
       to: z.iso.date().optional(),
-      date: z.iso.date().optional(),
+      start: z.iso.date().optional(),
       range: z.enum(["today", "week", "month"]).optional(),
     })
     .refine(
       (data) => {
         const filtersUsed =
-          Number(!!data.date) +
+          Number(!!data.start) +
           Number(!!data.range) +
           Number(!!data.from || !!data.to);
 
