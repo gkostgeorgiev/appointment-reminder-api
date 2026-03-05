@@ -6,7 +6,7 @@ import helmet from "helmet";
 import hpp from "hpp";
 import morgan from "morgan";
 
-import connectDB from "./config/db";
+import connectDB from "./config/db.js";
 import { startReminderJob } from "./jobs/reminderJob";
 import { errorHandler } from "./middleware/errorHandler";
 import appointmentRoutes from "./routes/appointment.routes";
