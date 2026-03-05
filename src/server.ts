@@ -7,6 +7,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import appointmentRoutes from "./routes/appointment.routes";
 import customerRoutes from "./routes/customer.routes";
 import professionalRoutes from "./routes/professional.routes";
+import devRoutes from "./routes/dev.routes";
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.get("/", (_req, res) => {
 app.use("/api/professionals", professionalRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/dev", devRoutes);
 
 app.use(errorHandler);
 

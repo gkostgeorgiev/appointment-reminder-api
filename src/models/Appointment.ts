@@ -1,4 +1,5 @@
 import { Schema, model, Types, Document } from "mongoose";
+import { ICustomer } from "./Customer";
 
 export const appointmentStatuses = [
   "scheduled",
@@ -9,7 +10,7 @@ export const appointmentStatuses = [
 
 export interface IAppointment extends Document {
   professional: Types.ObjectId;
-  customer: Types.ObjectId;
+  customer: ICustomer;
 
   start: Date;
   duration: number;
