@@ -1,4 +1,4 @@
-import { Schema, model, Types, Document } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 import { ICustomer } from "./Customer";
 
 export const appointmentStatuses = [
@@ -10,6 +10,24 @@ export const appointmentStatuses = [
 
 export interface IAppointment extends Document {
   professional: Types.ObjectId;
+  customer: Types.ObjectId;
+
+  start: Date;
+  duration: number;
+
+  service?: string;
+  notes?: string;
+
+  status: (typeof appointmentStatuses)[number];
+
+  reminderSent: boolean;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IAppointmentPopulated extends Document {
+  professional: Types.ObjectId;
   customer: ICustomer;
 
   start: Date;
@@ -19,6 +37,8 @@ export interface IAppointment extends Document {
   notes?: string;
 
   status: (typeof appointmentStatuses)[number];
+
+  reminderSent: boolean;
 
   createdAt: Date;
   updatedAt: Date;
@@ -58,11 +78,15 @@ const appointmentSchema = new Schema(
       enum: appointmentStatuses,
       default: "scheduled",
     },
+    reminderSent: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
 
-appointmentSchema.index({ professional: 1, start: 1 });
+appointmentSchema.index({ professional: 1, start: 1, reminderSent: 1 });
 
 export const Appointment = model<IAppointment>(
   "Appointment",

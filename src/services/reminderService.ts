@@ -1,7 +1,7 @@
 import { sendSms } from "./smsService";
-import { IAppointment } from "../models/Appointment";
+import { IAppointmentPopulated } from "../models/Appointment";
 
-export const sendAppointmentReminder = async (appointment: IAppointment) => {
+export const sendAppointmentReminder = async (appointment: IAppointmentPopulated) => {
   const phone = appointment.customer.phone;
 
   const start = new Date(appointment.start);
