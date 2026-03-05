@@ -23,12 +23,16 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
+app.set("trust proxy", 1);
+
 // Set security headers
 app.use(helmet());
 
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 app.use(limiter);
@@ -50,18 +54,25 @@ app.get("/health", (_req, res) => {
 app.use("/api/professionals", professionalRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/appointments", appointmentRoutes);
-app.use("/api/dev", devRoutes);
+if (process.env.NODE_ENV === "development") {
+  app.use("/api/dev", devRoutes);
+}
 
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
   if (
     process.env.NODE_ENV !== "test" &&
     process.env.RUN_REMINDER_WORKER === "true"
   ) {
     startReminderJob();
   }
+});
+
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received. Shutting down gracefully.");
+  process.exit(0);
 });
