@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import z from "zod";
-import { Customer } from "../models/Customer";
-import { sendResponse } from "../utils/apiResponse";
-import { ErrorResponse } from "../utils/errorResponse";
+import { Customer } from "../models/Customer.js";
+import { sendResponse } from "../utils/apiResponse.js";
+import { ErrorResponse } from "../utils/errorResponse.js";
 import {
   createCustomerSchema,
   updateCustomerSchema,
-} from "../validators/customerSchemas";
+} from "../validators/customerSchemas.js";
 
 type CreateCustomerInput = z.infer<typeof createCustomerSchema>["body"];
 type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>["body"];

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { sendSms } from "../services/smsService";
-import { catchAsync } from "../utils/catchAsync";
+import { sendSms } from "../services/smsService.js";
+import { catchAsync } from "../utils/catchAsync.js";
 
 const router = Router();
 

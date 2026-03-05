@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import z from "zod";
-import { Professional } from "../models/Professional";
-import { sendResponse } from "../utils/apiResponse";
-import { ErrorResponse } from "../utils/errorResponse";
-import { generateToken } from "../utils/jwt";
+import { Professional } from "../models/Professional.js";
+import { sendResponse } from "../utils/apiResponse.js";
+import { ErrorResponse } from "../utils/errorResponse.js";
+import { generateToken } from "../utils/jwt.js";
 import {
   loginProfessionalSchema,
   registerProfessionalSchema,
-} from "../validators/professionalSchemas";
+} from "../validators/professionalSchemas.js";
 
 type RegisterInput = z.infer<typeof registerProfessionalSchema>["body"];
 type LoginInput = z.infer<typeof loginProfessionalSchema>["body"];

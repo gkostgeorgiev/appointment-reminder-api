@@ -1,6 +1,6 @@
 import z from "zod";
-import { appointmentStatuses } from "../models/Appointment";
-import { objectIdParam, objectIdSchema } from "./commonSchemas";
+import { appointmentStatuses } from "../models/Appointment.js";
+import { objectIdParam, objectIdSchema } from "./commonSchemas.js";
 
 export const futureDateSchema = z.iso
   .datetime()

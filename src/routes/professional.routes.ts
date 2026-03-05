@@ -2,11 +2,11 @@ import { Request, Router } from "express";
 import {
   loginProfessional,
   registerProfessional,
-} from "../controllers/professional.controller";
-import { authMiddleware } from "../middleware/authMiddleware";
-import { validate } from "../middleware/validate";
-import { catchAsync } from "../utils/catchAsync";
-import { loginProfessionalSchema, registerProfessionalSchema } from "../validators/professionalSchemas";
+} from "../controllers/professional.controller.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
+import { validate } from "../middleware/validate.js";
+import { catchAsync } from "../utils/catchAsync.js";
+import { loginProfessionalSchema, registerProfessionalSchema } from "../validators/professionalSchemas.js";
 
 const router = Router();
 

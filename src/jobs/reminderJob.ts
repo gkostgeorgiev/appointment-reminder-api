@@ -1,7 +1,7 @@
 import cron from "node-cron";
-import { Appointment } from "../models/Appointment";
-import { sendAppointmentReminder } from "../services/reminderService";
-import { IAppointmentPopulated } from "../models/Appointment";
+import { Appointment } from "../models/Appointment.js";
+import { sendAppointmentReminder } from "../services/reminderService.js";
+import { IAppointmentPopulated } from "../models/Appointment.js";
 
 export const startReminderJob = () => {
   console.log("Reminder job started");

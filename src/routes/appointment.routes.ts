@@ -2,14 +2,14 @@ import { Router } from "express";
 import {
   createAppointment,
   getAppointments,
-} from "../controllers/appointment.controller";
-import { authMiddleware } from "../middleware/authMiddleware";
-import { validate } from "../middleware/validate";
-import { catchAsync } from "../utils/catchAsync";
+} from "../controllers/appointment.controller.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
+import { validate } from "../middleware/validate.js";
+import { catchAsync } from "../utils/catchAsync.js";
 import {
   createAppointmentSchema,
   getAppointmentsSchema,
-} from "../validators/appointmentSchema";
+} from "../validators/appointmentSchema.js";
 
 const router = Router();
 

@@ -4,15 +4,15 @@ import {
   deleteCustomer,
   getAllCustomers,
   updateCustomer,
-} from "../controllers/customer.controller";
-import { authMiddleware } from "../middleware/authMiddleware";
-import { validate } from "../middleware/validate";
-import { catchAsync } from "../utils/catchAsync";
+} from "../controllers/customer.controller.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
+import { validate } from "../middleware/validate.js";
+import { catchAsync } from "../utils/catchAsync.js";
 import {
   createCustomerSchema,
   updateCustomerSchema,
-} from "../validators/customerSchemas";
-import { objectIdParam } from "../validators/commonSchemas";
+} from "../validators/customerSchemas.js";
+import { objectIdParam } from "../validators/commonSchemas.js";
 
 const router = Router();
 

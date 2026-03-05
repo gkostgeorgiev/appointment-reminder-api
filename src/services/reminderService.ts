@@ -1,5 +1,5 @@
-import { sendSms } from "./smsService";
-import { IAppointmentPopulated } from "../models/Appointment";
+import { sendSms } from "./smsService.js";
+import { IAppointmentPopulated } from "../models/Appointment.js";
 
 export const sendAppointmentReminder = async (appointment: IAppointmentPopulated) => {
   const phone = appointment.customer.phone;

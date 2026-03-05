@@ -1,5 +1,5 @@
 import { Document, model, Schema, Types } from "mongoose";
-import { ICustomer } from "./Customer";
+import { ICustomer } from "./Customer.js";
 
 export const appointmentStatuses = [
   "scheduled",

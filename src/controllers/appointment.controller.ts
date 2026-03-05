@@ -1,21 +1,21 @@
 import { Request, Response } from "express";
 import { FilterQuery } from "mongoose";
 import z from "zod";
-import { Appointment, IAppointment } from "../models/Appointment";
-import { Customer } from "../models/Customer";
-import { sendResponse } from "../utils/apiResponse";
+import { Appointment, IAppointment } from "../models/Appointment.js";
+import { Customer } from "../models/Customer.js";
+import { sendResponse } from "../utils/apiResponse.js";
 import {
   getAppointmentEnd,
   getDateRange,
   getEndOfDay,
   getStartOfDay,
-} from "../utils/dateUtils";
-import { ErrorResponse } from "../utils/errorResponse";
+} from "../utils/dateUtils.js";
+import { ErrorResponse } from "../utils/errorResponse.js";
 import {
   createAppointmentSchema,
   getAppointmentsSchema,
   updateAppointmentSchema,
-} from "../validators/appointmentSchema";
+} from "../validators/appointmentSchema.js";
 
 type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>["body"];
 type GetAppointmentsQuery = z.infer<typeof getAppointmentsSchema>["query"];

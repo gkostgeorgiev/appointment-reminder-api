@@ -7,12 +7,12 @@ import hpp from "hpp";
 import morgan from "morgan";
 
 import connectDB from "./config/db.js";
-import { startReminderJob } from "./jobs/reminderJob";
-import { errorHandler } from "./middleware/errorHandler";
-import appointmentRoutes from "./routes/appointment.routes";
-import customerRoutes from "./routes/customer.routes";
-import devRoutes from "./routes/dev.routes";
-import professionalRoutes from "./routes/professional.routes";
+import { startReminderJob } from "./jobs/reminderJob.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import appointmentRoutes from "./routes/appointment.routes.js";
+import customerRoutes from "./routes/customer.routes.js";
+import devRoutes from "./routes/dev.routes.js";
+import professionalRoutes from "./routes/professional.routes.js";
 
 const app = express();
 
