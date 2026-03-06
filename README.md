@@ -378,6 +378,53 @@ These support:
 
 ---
 
+## Architecture
+
+The system follows a service-oriented backend architecture designed for SaaS scalability.
+
+```
+Client Application
+        │
+        ▼
+   Express API
+        │
+        │ JWT Authentication
+        │ Request Validation (Zod)
+        ▼
+     MongoDB Atlas
+        │
+        ▼
+ Appointment Storage
+        │
+        ▼
+ Reminder Worker (node-cron)
+        │
+        ▼
+   SMS Service (Twilio)
+        │
+        ▼
+     Patient Phone
+```
+
+### Components
+
+**Express API**
+
+Handles authentication, business logic, and data validation.
+
+**MongoDB**
+
+Stores professionals, customers, and appointment data.
+
+**Reminder Worker**
+
+Runs every 5 minutes and checks for appointments occurring in the next 24 hours.
+
+**SMS Service**
+
+Sends reminder messages to customers using Twilio.
+
+
 # Security
 
 The API includes several protection layers.
