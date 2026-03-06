@@ -7,6 +7,7 @@ declare global {
         query?: unknown;
         params?: unknown;
       };
+      requestId?: string;
     }
   }
 }

@@ -11,6 +11,8 @@ import connectDB from "./config/db.js";
 import { swaggerSpec } from "./config/swagger.js";
 import { startReminderJob } from "./jobs/reminderJob.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { requestIdMiddleware } from "./middleware/requestId.js";
+import { requestLogger } from "./middleware/requestLogger.js";
 import appointmentRoutes from "./routes/appointment.routes.js";
 import customerRoutes from "./routes/customer.routes.js";
 import devRoutes from "./routes/dev.routes.js";
@@ -28,6 +30,7 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
+// trust render's proxy for correct client IPs in logs and rate limiting
 app.set("trust proxy", 1);
 
 // Set security headers
@@ -50,6 +53,8 @@ app.use(express.json({ limit: "10kb" }));
 
 // Middleware
 app.use(cors());
+app.use(requestIdMiddleware);
+app.use(requestLogger);
 
 // Test route
 app.get("/health", (_req, res) => {

@@ -3,7 +3,7 @@ import { MongoServerError } from "mongodb";
 
 export const errorHandler = (
   err: any,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction,
 ) => {
@@ -36,5 +36,6 @@ export const errorHandler = (
     ok: false,
     status: statusCode,
     message,
+    requestId: req.requestId,
   });
 };
