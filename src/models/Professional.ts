@@ -27,7 +27,7 @@ const professionalSchema = new Schema<IProfessional>(
     profession: {
       type: String,
       required: true,
-      default: "dentist",
+      default: "professional",
     },
   },
   {
