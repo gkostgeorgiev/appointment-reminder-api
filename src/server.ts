@@ -57,6 +57,9 @@ app.use("/api/professionals", professionalRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/docs-json", (_req, res) => {
+  res.json(swaggerSpec);
+});
 if (process.env.NODE_ENV === "development") {
   app.use("/api/dev", devRoutes);
 }

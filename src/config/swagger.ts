@@ -1,3 +1,4 @@
+import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import swaggerJsdoc, { Options } from "swagger-jsdoc";
 
 const options: Options = {
@@ -30,5 +31,6 @@ const options: Options = {
 
   apis: ["./src/docs/*.ts"],
 };
+const registry = new OpenAPIRegistry();
 
 export const swaggerSpec = swaggerJsdoc(options);
