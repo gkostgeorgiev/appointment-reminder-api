@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /api/appointments:
+ * /api/v1/appointments:
  *   post:
  *     summary: Create appointment
  *     tags: [Appointments]
@@ -46,7 +46,7 @@
 
 /**
  * @swagger
- * /api/appointments:
+ * /api/v1/appointments:
  *   get:
  *     summary: Get appointments
  *     tags: [Appointments]
@@ -85,7 +85,7 @@
 
 /**
  * @swagger
- * /api/appointments/{id}:
+ * /api/v1/appointments/{id}:
  *   get:
  *     summary: Get appointment by ID
  *     tags: [Appointments]
@@ -95,7 +95,7 @@
 
 /**
  * @swagger
- * /api/appointments/{id}:
+ * /api/v1/appointments/{id}:
  *   patch:
  *     summary: Update appointment
  *     tags: [Appointments]
@@ -105,7 +105,7 @@
 
 /**
  * @swagger
- * /api/appointments/{id}:
+ * /api/v1/appointments/{id}:
  *   delete:
  *     summary: Delete appointment
  *     tags: [Appointments]

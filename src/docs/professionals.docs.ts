@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /api/professionals/register:
+ * /api/v1/professionals/register:
  *   post:
  *     summary: Register a new professional
  *     tags: [Professionals]
@@ -38,7 +38,7 @@
 
 /**
  * @swagger
- * /api/professionals/login:
+ * /api/v1/professionals/login:
  *   post:
  *     summary: Login professional
  *     tags: [Professionals]
@@ -79,7 +79,7 @@
 
 /**
  * @swagger
- * /api/professionals/me:
+ * /api/v1/professionals/me:
  *   get:
  *     summary: Get current authenticated professional
  *     tags: [Professionals]

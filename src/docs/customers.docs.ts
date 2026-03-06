@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /api/customers:
+ * /api/v1/customers:
  *   post:
  *     summary: Create a new customer
  *     tags: [Customers]
@@ -43,7 +43,7 @@
 
 /**
  * @swagger
- * /api/customers:
+ * /api/v1/customers:
  *   get:
  *     summary: Get all customers
  *     tags: [Customers]
@@ -56,7 +56,7 @@
 
 /**
  * @swagger
- * /api/customers/{id}:
+ * /api/v1/customers/{id}:
  *   get:
  *     summary: Get customer by ID
  *     tags: [Customers]
@@ -75,7 +75,7 @@
 
 /**
  * @swagger
- * /api/customers/{id}:
+ * /api/v1/customers/{id}:
  *   patch:
  *     summary: Update customer
  *     tags: [Customers]
@@ -94,7 +94,7 @@
 
 /**
  * @swagger
- * /api/customers/{id}:
+ * /api/v1/customers/{id}:
  *   delete:
  *     summary: Delete customer
  *     tags: [Customers]

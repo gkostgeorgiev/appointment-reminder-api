@@ -1,6 +1,6 @@
 import cors from "cors";
 import "dotenv/config";
-import express from "express";
+import express, { Router } from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import hpp from "hpp";
@@ -16,7 +16,10 @@ import customerRoutes from "./routes/customer.routes.js";
 import devRoutes from "./routes/dev.routes.js";
 import professionalRoutes from "./routes/professional.routes.js";
 
+const API_VERSION = "v1";
+
 const app = express();
+const apiRouter = Router();
 
 // Connect database
 connectDB();
@@ -53,9 +56,12 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.use("/api/professionals", professionalRoutes);
-app.use("/api/customers", customerRoutes);
-app.use("/api/appointments", appointmentRoutes);
+apiRouter.use("/professionals", professionalRoutes);
+apiRouter.use("/customers", customerRoutes);
+apiRouter.use("/appointments", appointmentRoutes);
+
+app.use(`/api/${API_VERSION}`, apiRouter);
+
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get("/docs-json", (_req, res) => {
   res.json(swaggerSpec);
