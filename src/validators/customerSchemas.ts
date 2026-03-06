@@ -1,4 +1,4 @@
-import { z } from "../config/openapi";
+import { z } from "../config/openapi.js";
 
 export const createCustomerSchema = z.object({
   body: z

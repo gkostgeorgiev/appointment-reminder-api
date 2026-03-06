@@ -1,4 +1,4 @@
-import { z } from "../config/openapi";
+import { z } from "../config/openapi.js";
 import { appointmentStatuses } from "../models/Appointment.js";
 import { objectIdParam, objectIdSchema } from "./commonSchemas.js";
 

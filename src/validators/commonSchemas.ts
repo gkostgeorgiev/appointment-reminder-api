@@ -1,4 +1,4 @@
-import { z } from "../config/openapi";
+import { z } from "../config/openapi.js";
 import mongoose from "mongoose";
 
 export const objectIdParam = (paramName: string, entityName: string) =>
