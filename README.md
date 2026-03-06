@@ -1,5 +1,13 @@
 # Appointment Reminder API
 
+![Node.js](https://img.shields.io/badge/node.js-20.x-green)
+![TypeScript](https://img.shields.io/badge/typescript-5.x-blue)
+![Express](https://img.shields.io/badge/express-4.x-lightgrey)
+![MongoDB](https://img.shields.io/badge/mongodb-atlas-green)
+![OpenAPI](https://img.shields.io/badge/openapi-swagger-green)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![API Docs](https://img.shields.io/badge/API-Documentation-green)
+
 A backend API for managing appointments and automatically sending SMS reminders to patients before their scheduled visits.
 
 The system is designed as a **multi-tenant SaaS backend**, allowing professionals to manage their customers and appointments while the platform automatically handles reminder notifications.
