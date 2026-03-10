@@ -18,22 +18,47 @@
  *           schema:
  *             type: object
  *             required:
- *               - name
  *               - email
  *               - password
  *             properties:
- *               name:
- *                 type: string
- *                 example: Dr. Ivan Petrov
  *               email:
  *                 type: string
- *                 example: ivan@example.com
+ *                 format: email
+ *                 example: doctor@example.com
  *               password:
  *                 type: string
- *                 example: password123
+ *                 minLength: 8
+ *                 example: securePassword123
+ *               profession:
+ *                 type: string
+ *                 minLength: 1
+ *                 example: Dentist
  *     responses:
  *       201:
  *         description: Professional registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [ok, status, data]
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                 status:
+ *                   type: integer
+ *                 data:
+ *                   type: object
+ *                   required: [id, email, profession, token]
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                     profession:
+ *                       type: string
+ *                     token:
+ *                       type: string
  */
 
 /**
@@ -54,10 +79,12 @@
  *             properties:
  *               email:
  *                 type: string
- *                 example: ivan@example.com
+ *                 format: email
+ *                 example: doctor@example.com
  *               password:
  *                 type: string
- *                 example: password123
+ *                 minLength: 8
+ *                 example: securePassword123
  *     responses:
  *       200:
  *         description: Successful login
@@ -65,13 +92,15 @@
  *           application/json:
  *             schema:
  *               type: object
+ *               required: [ok, status, data]
  *               properties:
  *                 ok:
  *                   type: boolean
  *                 status:
- *                   type: number
+ *                   type: integer
  *                 data:
  *                   type: object
+ *                   required: [token]
  *                   properties:
  *                     token:
  *                       type: string
@@ -87,5 +116,23 @@
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Professional profile returned
+ *         description: Authenticated user payload returned
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [message, user]
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Protected route accessed
+ *                 user:
+ *                   type: object
+ *                   required: [userId, email]
+ *                   properties:
+ *                     userId:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                       format: email
  */
