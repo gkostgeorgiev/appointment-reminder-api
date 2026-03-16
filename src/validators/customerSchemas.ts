@@ -76,6 +76,12 @@ export const getCustomersSchema = z.object({
         .min(1)
         .optional()
         .openapi({ example: "888" }),
+      name: z
+        .string()
+        .trim()
+        .min(1)
+        .optional()
+        .openapi({ example: "John" }),
     })
     .strict(),
 });

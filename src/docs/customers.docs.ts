@@ -94,6 +94,14 @@
  *           minLength: 1
  *         description: Partial phone match (case-insensitive)
  *         example: "888"
+ *       - in: query
+ *         name: name
+ *         required: false
+ *         schema:
+ *           type: string
+ *           minLength: 1
+ *         description: Partial first or last name match (case-insensitive)
+ *         example: "John"
  *     responses:
  *       200:
  *         description: List of customers
