@@ -10,13 +10,14 @@ import { validate } from "../middleware/validate.js";
 import { catchAsync } from "../utils/catchAsync.js";
 import {
   createCustomerSchema,
+  getCustomersSchema,
   updateCustomerSchema,
 } from "../validators/customerSchemas.js";
 import { objectIdParam } from "../validators/commonSchemas.js";
 
 const router = Router();
 
-router.get("/", authMiddleware, catchAsync(getAllCustomers));
+router.get("/", authMiddleware, validate(getCustomersSchema), catchAsync(getAllCustomers));
 
 router.post(
   "/",

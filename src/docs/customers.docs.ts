@@ -85,6 +85,15 @@
  *     tags: [Customers]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: phone
+ *         required: false
+ *         schema:
+ *           type: string
+ *           minLength: 1
+ *         description: Partial phone match (case-insensitive)
+ *         example: "888"
  *     responses:
  *       200:
  *         description: List of customers

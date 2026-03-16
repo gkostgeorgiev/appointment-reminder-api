@@ -10,6 +10,9 @@ import {
 
 type CreateCustomerInput = z.infer<typeof createCustomerSchema>["body"];
 type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>["body"];
+type GetCustomersQueryInput = {
+  phone?: string;
+};
 
 // @desc    Create customer
 // @route   POST /api/customers
@@ -33,9 +36,21 @@ export const createCustomer = async (req: Request, res: Response) => {
 // @route   GET /api/customers
 // @access  Private
 export const getAllCustomers = async (req: Request, res: Response) => {
-  const customers = await Customer.find({
+  const { phone } = (req.validated?.query ?? req.query) as GetCustomersQueryInput;
+
+  const filter: Record<string, unknown> = {
     professional: req.user!.userId,
-  }).sort({ createdAt: -1 });
+  };
+
+  if (phone) {
+    const normalizedPhone = phone.startsWith("0")
+      ? `359${phone.slice(1)}`
+      : phone;
+    const escapedPhone = normalizedPhone.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filter.phone = { $regex: escapedPhone, $options: "i" };
+  }
+
+  const customers = await Customer.find(filter).sort({ createdAt: -1 });
 
   return sendResponse(res, 200, customers);
 };

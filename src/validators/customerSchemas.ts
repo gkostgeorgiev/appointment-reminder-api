@@ -66,3 +66,16 @@ export const updateCustomerSchema = z.object({
       message: "At least one field must be provided",
     }),
 });
+
+export const getCustomersSchema = z.object({
+  query: z
+    .object({
+      phone: z
+        .string()
+        .trim()
+        .min(1)
+        .optional()
+        .openapi({ example: "888" }),
+    })
+    .strict(),
+});
