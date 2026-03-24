@@ -19,7 +19,7 @@ export const createCustomerSchema = z.object({
         .string()
         .trim()
         .min(1)
-        .openapi({ example: "+359888123456" }),
+        .openapi({ example: "359888123456" }),
 
       email: z
         .string()

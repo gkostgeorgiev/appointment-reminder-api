@@ -3,6 +3,7 @@ import z from "zod";
 import { Customer } from "../models/Customer.js";
 import { sendResponse } from "../utils/apiResponse.js";
 import { ErrorResponse } from "../utils/errorResponse.js";
+import { normalizeMsisdn } from "../utils/index.js";
 import {
   createCustomerSchema,
   updateCustomerSchema,
@@ -22,10 +23,12 @@ export const createCustomer = async (req: Request, res: Response) => {
   const { firstName, lastName, phone, email } = req.validated!
     .body as CreateCustomerInput;
 
+  const normalizedPhone = normalizeMsisdn(phone);
+
   const customer = await Customer.create({
     firstName,
     lastName,
-    phone,
+    phone: normalizedPhone,
     email,
     professional: req.user!.userId,
   });
@@ -37,7 +40,8 @@ export const createCustomer = async (req: Request, res: Response) => {
 // @route   GET /api/customers
 // @access  Private
 export const getAllCustomers = async (req: Request, res: Response) => {
-  const { phone, name } = (req.validated?.query ?? req.query) as GetCustomersQueryInput;
+  const { phone, name } = (req.validated?.query ??
+    req.query) as GetCustomersQueryInput;
 
   const filter: Record<string, unknown> = {
     professional: req.user!.userId,
