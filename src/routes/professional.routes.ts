@@ -1,6 +1,7 @@
 import { Request, Router } from "express";
 import {
   loginProfessional,
+  logoutProfessional,
   registerProfessional,
 } from "../controllers/professional.controller.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
@@ -32,5 +33,7 @@ router.get(
     });
   }),
 );
+
+router.post("/logout", authMiddleware, catchAsync(logoutProfessional));
 
 export default router;

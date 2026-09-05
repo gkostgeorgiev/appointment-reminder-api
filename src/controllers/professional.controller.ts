@@ -1,5 +1,14 @@
+import { randomUUID } from "crypto";
 import { Request, Response } from "express";
 import z from "zod";
+import {
+  clearCsrfCookieOptions,
+  clearTokenCookieOptions,
+  CSRF_COOKIE,
+  csrfCookieOptions,
+  TOKEN_COOKIE,
+  tokenCookieOptions,
+} from "../config/cookies.js";
 import { Professional } from "../models/Professional.js";
 import { sendResponse } from "../utils/apiResponse.js";
 import { ErrorResponse } from "../utils/errorResponse.js";
@@ -8,6 +17,11 @@ import {
   loginProfessionalSchema,
   registerProfessionalSchema,
 } from "../validators/professionalSchemas.js";
+
+const setAuthCookies = (res: Response, token: string) => {
+  res.cookie(TOKEN_COOKIE, token, tokenCookieOptions);
+  res.cookie(CSRF_COOKIE, randomUUID(), csrfCookieOptions);
+};
 
 type RegisterInput = z.infer<typeof registerProfessionalSchema>["body"];
 type LoginInput = z.infer<typeof loginProfessionalSchema>["body"];
@@ -27,6 +41,8 @@ export const registerProfessional = async (req: Request, res: Response) => {
     userId: professional.id,
     email: professional.email,
   });
+
+  setAuthCookies(res, token);
 
   return sendResponse(res, 201, {
     id: professional._id,
@@ -59,7 +75,19 @@ export const loginProfessional = async (req: Request, res: Response) => {
     email: professional.email,
   });
 
+  setAuthCookies(res, token);
+
   return sendResponse(res, 200, {
     token,
   });
+};
+
+// @desc    Logout professional
+// @route   POST /api/professionals/logout
+// @access  Private
+export const logoutProfessional = async (_req: Request, res: Response) => {
+  res.clearCookie(TOKEN_COOKIE, clearTokenCookieOptions);
+  res.clearCookie(CSRF_COOKIE, clearCsrfCookieOptions);
+
+  return sendResponse(res, 200, { message: "Logged out" });
 };

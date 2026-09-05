@@ -1,10 +1,14 @@
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import "dotenv/config";
 import express, { Router } from "express";
 import rateLimit from "express-rate-limit";
+import fs from "fs";
 import helmet from "helmet";
 import hpp from "hpp";
+import https from "https";
 import morgan from "morgan";
+import path from "path";
 import swaggerUi from "swagger-ui-express";
 
 import connectDB from "./config/db.js";
@@ -19,6 +23,14 @@ import devRoutes from "./routes/dev.routes.js";
 import professionalRoutes from "./routes/professional.routes.js";
 
 const API_VERSION = "v1";
+
+const CORS_ORIGIN = process.env.CORS_ORIGIN;
+
+if (!CORS_ORIGIN) {
+  throw new Error("CORS_ORIGIN is not defined in environment variables");
+}
+
+const allowedOrigins = CORS_ORIGIN.split(",").map((origin) => origin.trim());
 
 const app = express();
 const apiRouter = Router();
@@ -52,7 +64,8 @@ app.use(hpp());
 app.use(express.json({ limit: "10kb" }));
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cookieParser());
 app.use(requestIdMiddleware);
 app.use(requestLogger);
 
@@ -79,7 +92,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+const onListen = () => {
   console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
   if (
     process.env.NODE_ENV !== "test" &&
@@ -87,7 +100,28 @@ app.listen(PORT, () => {
   ) {
     startReminderJob();
   }
-});
+};
+
+// SameSite=None cookies require HTTPS, so dev serves over a locally-trusted
+// cert (see README) to exercise the same cookie path production runs behind
+// Render's proxy termination.
+const devCertPath = path.resolve(process.cwd(), "certs", "dev-cert.pem");
+const devKeyPath = path.resolve(process.cwd(), "certs", "dev-key.pem");
+
+if (
+  process.env.NODE_ENV === "development" &&
+  fs.existsSync(devCertPath) &&
+  fs.existsSync(devKeyPath)
+) {
+  https
+    .createServer(
+      { cert: fs.readFileSync(devCertPath), key: fs.readFileSync(devKeyPath) },
+      app
+    )
+    .listen(PORT, onListen);
+} else {
+  app.listen(PORT, onListen);
+}
 
 process.on("SIGTERM", () => {
   console.log("SIGTERM received. Shutting down gracefully.");

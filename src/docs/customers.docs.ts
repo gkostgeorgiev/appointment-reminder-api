@@ -13,6 +13,23 @@
  *     tags: [Customers]
  *     security:
  *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     description: >
+ *       When authenticating via the `token` cookie, this request also
+ *       requires the `X-CSRF-Token` header (see the header parameter
+ *       below); it is not required when authenticating via
+ *       `Authorization: Bearer`.
+ *     parameters:
+ *       - in: header
+ *         name: X-CSRF-Token
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Required when authenticating via the `token` cookie - must
+ *           match the `csrfToken` cookie's value, or the request is
+ *           rejected with 403. Not required for `Authorization: Bearer`
+ *           requests.
  *     requestBody:
  *       required: true
  *       content:
@@ -85,6 +102,7 @@
  *     tags: [Customers]
  *     security:
  *       - bearerAuth: []
+ *       - cookieAuth: []
  *     parameters:
  *       - in: query
  *         name: phone
@@ -149,6 +167,12 @@
  *     tags: [Customers]
  *     security:
  *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     description: >
+ *       When authenticating via the `token` cookie, this request also
+ *       requires the `X-CSRF-Token` header (see the header parameter
+ *       below); it is not required when authenticating via
+ *       `Authorization: Bearer`.
  *     parameters:
  *       - in: path
  *         name: id
@@ -156,6 +180,16 @@
  *         schema:
  *           type: string
  *         example: 65f1b9e9d02c9a0012c5c9a1
+ *       - in: header
+ *         name: X-CSRF-Token
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Required when authenticating via the `token` cookie - must
+ *           match the `csrfToken` cookie's value, or the request is
+ *           rejected with 403. Not required for `Authorization: Bearer`
+ *           requests.
  *     requestBody:
  *       required: true
  *       content:
@@ -225,6 +259,12 @@
  *     tags: [Customers]
  *     security:
  *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     description: >
+ *       When authenticating via the `token` cookie, this request also
+ *       requires the `X-CSRF-Token` header (see the header parameter
+ *       below); it is not required when authenticating via
+ *       `Authorization: Bearer`.
  *     parameters:
  *       - in: path
  *         name: id
@@ -232,6 +272,16 @@
  *         schema:
  *           type: string
  *         example: 65f1b9e9d02c9a0012c5c9a1
+ *       - in: header
+ *         name: X-CSRF-Token
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Required when authenticating via the `token` cookie - must
+ *           match the `csrfToken` cookie's value, or the request is
+ *           rejected with 403. Not required for `Authorization: Bearer`
+ *           requests.
  *     responses:
  *       204:
  *         description: Customer deleted

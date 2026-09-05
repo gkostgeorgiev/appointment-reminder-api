@@ -16,7 +16,7 @@ There is no test suite and no lint/format tooling configured in this repo (no te
 
 Node is pinned via `volta` to 20.19.4. Module system is native ESM (`"type": "module"`) with `nodenext` resolution — relative imports inside `src/` must use explicit `.js` extensions (e.g. `import x from "./config/db.js"`), even though the source files are `.ts`.
 
-Required env vars (see `.env`, not committed): `PORT`, `MONGO_URI`, `JWT_SECRET`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `RUN_REMINDER_WORKER`, `NODE_ENV`. Required env vars are documented in `.env` (not committed). The actual `.env` file contains secrets and must not be read or modified. `PERSONAL_NUMBER` is additionally needed for the dev-only `/api/dev/test-sms` route.
+Required env vars (see `.env`, not committed): `PORT`, `MONGO_URI`, `JWT_SECRET`, `CORS_ORIGIN`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `RUN_REMINDER_WORKER`, `NODE_ENV`. Required env vars are documented in `.env` (not committed). The actual `.env` file contains secrets and must not be read or modified. `PERSONAL_NUMBER` is additionally needed for the dev-only `/api/dev/test-sms` route. `CORS_ORIGIN` is a comma-separated allowlist of origins passed to `cors({ origin, credentials: true })` in `server.ts` — required because credentialed CORS cannot use a wildcard origin.
 
 ## Architecture
 
@@ -30,7 +30,7 @@ Every protected route follows the same chain, in this order:
 router.<verb>(path, authMiddleware, validate(zodSchema), catchAsync(controller))
 ```
 
-- **`authMiddleware`** (`src/middleware/authMiddleware.ts`) reads the `Bearer` JWT, verifies it (`src/utils/jwt.ts`), and sets `req.user = { userId, email }`.
+- **`authMiddleware`** (`src/middleware/authMiddleware.ts`) reads the JWT from the `token` cookie first, falling back to the `Bearer` header if no cookie is present, verifies it (`src/utils/jwt.ts`), and sets `req.user = { userId, email }`. When the token came from the cookie and the request is a mutating method (not `GET`/`HEAD`/`OPTIONS`), it also enforces a double-submit CSRF check: the `x-csrf-token` header must match the `csrfToken` cookie, or the request is rejected with `403`. Bearer-header requests skip the CSRF check entirely.
 - **`validate(schema)`** (`src/middleware/validate.ts`) runs a single Zod schema against `{ body, params, query }` combined into one object, and on success stores the parsed result on `req.validated` (typed in `src/types/express.d.ts`). Controllers read `req.validated!.body` / `.query` / `.params`, cast to the schema's inferred type — **not** `req.body`/`req.query` directly (one legacy exception: `getAllCustomers` falls back to `req.query` if `req.validated?.query` is absent).
 - Controllers are plain `async` functions that `throw` on error and are wrapped in **`catchAsync`** (`src/utils/catchAsync.ts`) to forward rejections to Express's error handler — controllers never need their own try/catch for expected failures.
 - **`ErrorResponse`** (`src/utils/errorResponse.ts`) is the standard way to fail a request: `throw new ErrorResponse(message, statusCode)`.
@@ -62,6 +62,12 @@ Note: these `.openapi()` annotations are *not* currently wired into the served d
 ### Auth
 
 JWT payload is `{ userId, email }`, 1h expiry (`src/utils/jwt.ts`). `Professional` passwords are bcrypt-hashed in a Mongoose `pre("save")` hook (`src/models/Professional.ts`); compare via `professional.comparePassword(candidate)`.
+
+Register and login (`src/controllers/professional.controller.ts`) issue the token two ways at once: as `data.token` in the JSON response (for `Authorization: Bearer` clients), and as an httpOnly `token` cookie plus a non-httpOnly `csrfToken` cookie (`src/config/cookies.ts` holds the shared names/options), both `secure: true; sameSite: "none"` in every environment — see the dev-HTTPS note below. `POST /professionals/logout` (auth required) clears both cookies via `res.clearCookie`; it has no effect on an already-issued Bearer token, which just expires on its own.
+
+The dual-issue (JSON body + cookie) is a deliberate transitional state, not the end goal — once the frontend is fully on cookie auth and this has run in production for a while, `data.token` should be dropped from the response bodies. Keeping the raw JWT in JSON undercuts part of the point of `httpOnly`: an XSS bug could still read it from the response and replay it via the header, bypassing the cookie's protection.
+
+Because `SameSite=None` cookies require HTTPS, `npm run dev` looks for a locally-trusted cert/key at `certs/dev-cert.pem` / `certs/dev-key.pem` (gitignored) and serves over `https` when both are present (generate them with [`mkcert`](https://github.com/FiloSottile/mkcert) for `localhost`); otherwise it falls back to plain `http`. Production runs behind Render's proxy, which terminates TLS in front of the app (hence `trust proxy` in `server.ts`), so `app.listen` stays plain there.
 
 ### Mounting / routing gotcha
 

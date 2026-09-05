@@ -13,6 +13,23 @@
  *     tags: [Appointments]
  *     security:
  *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     description: >
+ *       When authenticating via the `token` cookie, this request also
+ *       requires the `X-CSRF-Token` header (see the header parameter
+ *       below); it is not required when authenticating via
+ *       `Authorization: Bearer`.
+ *     parameters:
+ *       - in: header
+ *         name: X-CSRF-Token
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Required when authenticating via the `token` cookie - must
+ *           match the `csrfToken` cookie's value, or the request is
+ *           rejected with 403. Not required for `Authorization: Bearer`
+ *           requests.
  *     requestBody:
  *       required: true
  *       content:
@@ -94,6 +111,7 @@
  *     tags: [Appointments]
  *     security:
  *       - bearerAuth: []
+ *       - cookieAuth: []
  *     description: Use only one filtering method per request (start, range, or from/to)
  *     parameters:
  *       - in: query
@@ -176,4 +194,145 @@
  *                       updatedAt:
  *                         type: string
  *                         format: date-time
+ */
+
+/**
+ * @swagger
+ * /api/v1/appointments/{id}:
+ *   patch:
+ *     summary: Update appointment
+ *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     description: >
+ *       When authenticating via the `token` cookie, this request also
+ *       requires the `X-CSRF-Token` header (see the header parameter
+ *       below); it is not required when authenticating via
+ *       `Authorization: Bearer`.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 65f1b9e9d02c9a0012c5c9a1
+ *       - in: header
+ *         name: X-CSRF-Token
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Required when authenticating via the `token` cookie - must
+ *           match the `csrfToken` cookie's value, or the request is
+ *           rejected with 403. Not required for `Authorization: Bearer`
+ *           requests.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             minProperties: 1
+ *             properties:
+ *               customer:
+ *                 type: string
+ *                 example: 65f1b9e9d02c9a0012c5c9a1
+ *               start:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Must be a future ISO datetime
+ *                 example: 2026-03-20T15:00:00Z
+ *               duration:
+ *                 type: integer
+ *                 minimum: 1
+ *                 example: 45
+ *               service:
+ *                 type: string
+ *                 example: Root canal treatment
+ *               notes:
+ *                 type: string
+ *                 example: Patient requested anesthesia
+ *               status:
+ *                 type: string
+ *                 enum: [scheduled, completed, cancelled, no-show]
+ *                 example: completed
+ *     responses:
+ *       200:
+ *         description: Appointment updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [ok, status, data]
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                 status:
+ *                   type: integer
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     professional:
+ *                       type: string
+ *                     customer:
+ *                       type: string
+ *                     start:
+ *                       type: string
+ *                       format: date-time
+ *                     duration:
+ *                       type: integer
+ *                     service:
+ *                       type: string
+ *                     notes:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                       enum: [scheduled, completed, cancelled, no-show]
+ *                     reminderSent:
+ *                       type: boolean
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
+ */
+
+/**
+ * @swagger
+ * /api/v1/appointments/{id}:
+ *   delete:
+ *     summary: Delete appointment
+ *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     description: >
+ *       When authenticating via the `token` cookie, this request also
+ *       requires the `X-CSRF-Token` header (see the header parameter
+ *       below); it is not required when authenticating via
+ *       `Authorization: Bearer`.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 65f1b9e9d02c9a0012c5c9a1
+ *       - in: header
+ *         name: X-CSRF-Token
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Required when authenticating via the `token` cookie - must
+ *           match the `csrfToken` cookie's value, or the request is
+ *           rejected with 403. Not required for `Authorization: Bearer`
+ *           requests.
+ *     responses:
+ *       204:
+ *         description: Appointment deleted
  */

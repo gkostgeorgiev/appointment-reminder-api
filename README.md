@@ -127,7 +127,7 @@ Request body
 
 POST /api/professionals/login
 
-Returns a JWT token.
+Returns a JWT token, both in the response body and as an httpOnly cookie.
 
 Request body
 
@@ -146,6 +146,10 @@ Response
 }
 ```
 
+The same JWT is also set as an httpOnly `token` cookie, plus a companion, readable `csrfToken` cookie. Register does the same on success. Browser clients should authenticate via the cookie (`fetch(url, { credentials: "include" })`); non-browser clients can keep using `Authorization: Bearer <token>` from the JSON response — both are accepted on every protected route.
+
+If you authenticate via the cookie, every mutating request (`POST`/`PUT`/`PATCH`/`DELETE`) must also send an `X-CSRF-Token` header equal to the `csrfToken` cookie's value (read it with client-side JS — it is not httpOnly). This is a CSRF mitigation required by the cookie being `SameSite=None`; Bearer-header requests don't need this header.
+
 ---
 
 ## Get Current Professional
@@ -154,7 +158,15 @@ GET /api/professionals/me
 
 Returns information about the authenticated professional.
 
-Authentication required.
+Authentication required (cookie or `Authorization: Bearer` header).
+
+---
+
+## Logout
+
+POST /api/professionals/logout
+
+Clears the `token` and `csrfToken` cookies. Authentication required. Has no effect on a Bearer token already handed to a non-browser client.
 
 ---
 
@@ -464,6 +476,7 @@ Example `.env`
 PORT=5000
 MONGO_URI=mongo_connection_string
 JWT_SECRET=secret
+CORS_ORIGIN=https://your-frontend.example.com
 
 TWILIO_ACCOUNT_SID=...
 TWILIO_AUTH_TOKEN=...
@@ -471,6 +484,8 @@ TWILIO_PHONE_NUMBER=...
 
 RUN_REMINDER_WORKER=true
 ```
+
+`CORS_ORIGIN` is a comma-separated list of allowed origins (e.g. `https://app.example.com,https://staging.example.com`). It's required because cookie-based auth needs `credentials: true` on CORS, which the spec forbids combining with a wildcard `*` origin.
 
 ---
 
@@ -481,6 +496,8 @@ Install dependencies
 ```
 npm install
 ```
+
+Cookie-based auth uses `SameSite=None` cookies, which only get set/sent over HTTPS. To exercise that locally, generate a trusted local certificate with [mkcert](https://github.com/FiloSottile/mkcert) and save it as `certs/dev-cert.pem` / `certs/dev-key.pem` (gitignored) — `npm run dev` will pick it up automatically and serve over HTTPS. Without it, dev falls back to plain HTTP and only the `Authorization: Bearer` auth path is testable locally.
 
 Start development server
 
