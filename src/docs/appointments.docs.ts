@@ -138,6 +138,15 @@
  *           type: string
  *           enum: [today, week, month]
  *         description: Predefined date range
+ *       - in: query
+ *         name: customer
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Filter to appointments for a single customer, past and future.
+ *           Can be combined with a date filter; on its own, returns the
+ *           customer's full appointment history.
+ *         example: 65f1b9e9d02c9a0012c5c9a1
  *     responses:
  *       200:
  *         description: List of appointments

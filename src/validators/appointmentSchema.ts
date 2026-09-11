@@ -103,6 +103,8 @@ export const getAppointmentsSchema = z.object({
         .enum(["today", "week", "month"])
         .optional()
         .openapi({ example: "week" }),
+
+      customer: objectIdSchema("customer").optional(),
     })
     .refine(
       (data) => {

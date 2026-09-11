@@ -63,12 +63,25 @@ export const createAppointment = async (req: Request, res: Response) => {
 // @route   GET /api/appointments
 // @access  Private
 export const getAppointments = async (req: Request, res: Response) => {
-  const { from, to, start, range } = req.validated!
+  const { from, to, start, range, customer } = req.validated!
     .query as GetAppointmentsQuery;
 
   const filter: FilterQuery<IAppointment> = {
     professional: req.user!.userId,
   };
+
+  if (customer) {
+    const existing = await Customer.findOne({
+      _id: customer,
+      professional: req.user!.userId,
+    });
+
+    if (!existing) {
+      throw new ErrorResponse("Customer not found", 404);
+    }
+
+    filter.customer = customer;
+  }
 
   if (range) {
     const { rangeStart, rangeEnd } = getDateRange(range);
