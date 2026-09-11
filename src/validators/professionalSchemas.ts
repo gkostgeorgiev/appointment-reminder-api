@@ -39,3 +39,31 @@ export const loginProfessionalSchema = z.object({
     })
     .strict(),
 });
+
+export const forgotPasswordSchema = z.object({
+  body: z
+    .object({
+      email: z
+        .string()
+        .trim()
+        .pipe(z.email())
+        .openapi({ example: "doctor@example.com" }),
+    })
+    .strict(),
+});
+
+export const resetPasswordSchema = z.object({
+  body: z
+    .object({
+      token: z
+        .string()
+        .min(1)
+        .openapi({ example: "9f1c2e...64-hex-chars" }),
+
+      password: z
+        .string()
+        .min(8)
+        .openapi({ example: "newSecurePassword123" }),
+    })
+    .strict(),
+});

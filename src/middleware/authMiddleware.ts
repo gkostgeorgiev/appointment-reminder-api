@@ -1,13 +1,14 @@
-import { Request, Response, NextFunction } from "express";
-import { verifyToken, JwtPayload } from "../utils/jwt.js";
+import { NextFunction, Request, Response } from "express";
 import { CSRF_COOKIE, CSRF_HEADER, TOKEN_COOKIE } from "../config/cookies.js";
+import { Professional } from "../models/Professional.js";
+import { verifyToken } from "../utils/jwt.js";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
-export const authMiddleware = (
+export const authMiddleware = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const cookieToken = req.cookies?.[TOKEN_COOKIE];
   const authHeader = req.headers.authorization;
@@ -37,6 +38,23 @@ export const authMiddleware = (
 
   try {
     const decoded = verifyToken(token);
+
+    const professional = await Professional.findById(decoded.userId)
+      .select("passwordChangedAt")
+      .lean();
+
+    if (!professional) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+
+    if (
+      professional.passwordChangedAt &&
+      typeof decoded.iat === "number" &&
+      decoded.iat * 1000 < professional.passwordChangedAt.getTime()
+    ) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+
     req.user = decoded;
     next();
   } catch (error) {

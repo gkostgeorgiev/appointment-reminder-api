@@ -9,6 +9,8 @@ if (!JWT_SECRET) {
 export interface JwtPayload {
   userId: string;
   email: string;
+  iat?: number;
+  exp?: number;
 }
 
 export const generateToken = (payload: JwtPayload): string => {

@@ -170,6 +170,47 @@ Clears the `token` and `csrfToken` cookies. Authentication required. Has no effe
 
 ---
 
+## Forgot Password
+
+POST /api/professionals/forgot-password
+
+Request body
+
+```json
+{
+  "email": "ivan@example.com"
+}
+```
+
+Always responds with the same generic message, whether or not an account exists for that email:
+
+```json
+{
+  "message": "If an account with that email exists, a password reset link has been sent."
+}
+```
+
+If the account exists, an email is sent (via Resend) containing a reset link (`${FRONTEND_URL}/reset-password?token=...`). The token is single-use and expires after 1 hour. This endpoint is rate-limited to 5 requests/hour per client.
+
+---
+
+## Reset Password
+
+POST /api/professionals/reset-password
+
+Request body
+
+```json
+{
+  "token": "the-token-from-the-email",
+  "password": "newPassword123"
+}
+```
+
+On success, the password is updated and any JWT issued before the reset is invalidated — the client must log in again.
+
+---
+
 # Customers
 
 Base route:
@@ -483,6 +524,10 @@ TWILIO_AUTH_TOKEN=...
 TWILIO_PHONE_NUMBER=...
 
 RUN_REMINDER_WORKER=true
+
+RESEND_API_KEY=...
+EMAIL_FROM=noreply@your-domain.example.com
+FRONTEND_URL=https://your-frontend.example.com
 ```
 
 `CORS_ORIGIN` is a comma-separated list of allowed origins (e.g. `https://app.example.com,https://staging.example.com`). It's required because cookie-based auth needs `credentials: true` on CORS, which the spec forbids combining with a wildcard `*` origin.

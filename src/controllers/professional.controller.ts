@@ -10,12 +10,16 @@ import {
   tokenCookieOptions,
 } from "../config/cookies.js";
 import { Professional } from "../models/Professional.js";
+import { sendPasswordResetEmail } from "../services/emailService.js";
 import { sendResponse } from "../utils/apiResponse.js";
 import { ErrorResponse } from "../utils/errorResponse.js";
 import { generateToken } from "../utils/jwt.js";
+import { generateResetToken, hashResetToken } from "../utils/passwordReset.js";
 import {
+  forgotPasswordSchema,
   loginProfessionalSchema,
   registerProfessionalSchema,
+  resetPasswordSchema,
 } from "../validators/professionalSchemas.js";
 
 const setAuthCookies = (res: Response, token: string) => {
@@ -25,6 +29,8 @@ const setAuthCookies = (res: Response, token: string) => {
 
 type RegisterInput = z.infer<typeof registerProfessionalSchema>["body"];
 type LoginInput = z.infer<typeof loginProfessionalSchema>["body"];
+type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>["body"];
+type ResetPasswordInput = z.infer<typeof resetPasswordSchema>["body"];
 
 // @desc    Register professional
 // @route   POST /api/professionals/register
@@ -90,4 +96,57 @@ export const logoutProfessional = async (_req: Request, res: Response) => {
   res.clearCookie(CSRF_COOKIE, clearCsrfCookieOptions);
 
   return sendResponse(res, 200, { message: "Logged out" });
+};
+
+// @desc    Request a password reset email
+// @route   POST /api/professionals/forgot-password
+// @access  Public
+export const forgotPassword = async (req: Request, res: Response) => {
+  const { email } = req.validated!.body as ForgotPasswordInput;
+
+  const professional = await Professional.findOne({ email });
+
+  if (professional) {
+    const { rawToken, tokenHash, expiresAt } = generateResetToken();
+
+    professional.passwordResetTokenHash = tokenHash;
+    professional.passwordResetTokenExpires = expiresAt;
+    await professional.save({ validateModifiedOnly: true });
+
+    sendPasswordResetEmail(professional.email, rawToken).catch((error) => {
+      console.error("Failed to send password reset email:", error);
+    });
+  }
+
+  return sendResponse(res, 200, {
+    message:
+      "If an account with that email exists, a password reset link has been sent.",
+  });
+};
+
+// @desc    Reset password using a reset token
+// @route   POST /api/professionals/reset-password
+// @access  Public
+export const resetPassword = async (req: Request, res: Response) => {
+  const { token, password } = req.validated!.body as ResetPasswordInput;
+
+  const tokenHash = hashResetToken(token);
+
+  const professional = await Professional.findOne({
+    passwordResetTokenHash: tokenHash,
+    passwordResetTokenExpires: { $gt: new Date() },
+  }).select("+passwordResetTokenHash +passwordResetTokenExpires");
+
+  if (!professional) {
+    throw new ErrorResponse("Invalid or expired reset token", 400);
+  }
+
+  professional.password = password;
+  professional.passwordResetTokenHash = null;
+  professional.passwordResetTokenExpires = null;
+  await professional.save();
+
+  return sendResponse(res, 200, {
+    message: "Password has been reset successfully. Please log in.",
+  });
 };
