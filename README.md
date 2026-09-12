@@ -575,6 +575,7 @@ MVP backend completed.
 Implemented:
 
 * Authentication
+* Password reset (forgot/reset password)
 * Customers CRUD
 * Appointments CRUD
 * Conflict detection
@@ -586,3 +587,7 @@ Implemented:
 Next step:
 
 Frontend dashboard.
+
+Before going live (production):
+
+* Verify a real sending domain in Resend and update `EMAIL_FROM` to an address on it — password reset emails currently only deliver to the Resend account owner's own email address (sandbox sender `onboarding@resend.dev`), which is fine for MVP development but won't reach real users in production.
