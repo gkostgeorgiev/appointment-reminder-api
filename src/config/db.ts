@@ -6,9 +6,17 @@ const connectDB = async () => {
     await mongoose.connect(env.MONGO_URI);
     console.log("MongoDB Connected");
   } catch (error) {
-    console.error("Database connection failed:", error instanceof Error ? error.message : error);
+    console.error(
+      "Database connection failed:",
+      error instanceof Error ? error.message : error,
+    );
     process.exit(1);
   }
 };
 
-export default connectDB;
+const disconnectDB = async () => {
+  await mongoose.connection.close();
+  console.log("MongoDB connection closed");
+};
+
+export { connectDB, disconnectDB };

@@ -12,7 +12,7 @@ import morgan from "morgan";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 
-import connectDB from "./config/db.js";
+import { connectDB, disconnectDB } from "./config/db.js";
 import { swaggerSpec } from "./config/swagger.js";
 import { startReminderJob } from "./jobs/reminderJob.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -98,22 +98,47 @@ const onListen = () => {
 const devCertPath = path.resolve(process.cwd(), "certs", "dev-cert.pem");
 const devKeyPath = path.resolve(process.cwd(), "certs", "dev-key.pem");
 
-if (
+const server =
   env.NODE_ENV === "development" &&
   fs.existsSync(devCertPath) &&
   fs.existsSync(devKeyPath)
-) {
-  https
-    .createServer(
-      { cert: fs.readFileSync(devCertPath), key: fs.readFileSync(devKeyPath) },
-      app
-    )
-    .listen(PORT, onListen);
-} else {
-  app.listen(PORT, onListen);
-}
+    ? https
+        .createServer(
+          {
+            cert: fs.readFileSync(devCertPath),
+            key: fs.readFileSync(devKeyPath),
+          },
+          app,
+        )
+        .listen(PORT, onListen)
+    : app.listen(PORT, onListen);
 
-process.on("SIGTERM", () => {
-  console.log("SIGTERM received. Shutting down gracefully.");
-  process.exit(0);
-});
+const SHUTDOWN_TIMEOUT_MS = 10_000;
+
+const shutdown = (signal: string) => {
+  console.log(`${signal} received. Shutting down gracefully.`);
+
+  const forceExitTimer = setTimeout(() => {
+    console.error("Graceful shutdown timed out, forcing exit.");
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
+  forceExitTimer.unref();
+
+  server.close(async (err) => {
+    if (err) {
+      console.error("Error closing HTTP server:", err);
+    }
+
+    try {
+      await disconnectDB();
+    } catch (dbError) {
+      console.error("Error closing MongoDB connection:", dbError);
+    }
+
+    clearTimeout(forceExitTimer);
+    process.exit(err ? 1 : 0);
+  });
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
