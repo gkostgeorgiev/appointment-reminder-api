@@ -1,6 +1,7 @@
+import { env } from "./config/env.js";
+
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import "dotenv/config";
 import express, { Router } from "express";
 import rateLimit from "express-rate-limit";
 import fs from "fs";
@@ -24,21 +25,13 @@ import professionalRoutes from "./routes/professional.routes.js";
 
 const API_VERSION = "v1";
 
-const CORS_ORIGIN = process.env.CORS_ORIGIN;
-
-if (!CORS_ORIGIN) {
-  throw new Error("CORS_ORIGIN is not defined in environment variables");
-}
-
-const allowedOrigins = CORS_ORIGIN.split(",").map((origin) => origin.trim());
-
 const app = express();
 const apiRouter = Router();
 
 // Connect database
 connectDB();
 
-if (process.env.NODE_ENV === "development") {
+if (env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
@@ -64,7 +57,7 @@ app.use(hpp());
 app.use(express.json({ limit: "10kb" }));
 
 // Middleware
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(cookieParser());
 app.use(requestIdMiddleware);
 app.use(requestLogger);
@@ -84,20 +77,17 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get("/docs-json", (_req, res) => {
   res.json(swaggerSpec);
 });
-if (process.env.NODE_ENV === "development") {
+if (env.NODE_ENV === "development") {
   app.use("/api/dev", devRoutes);
 }
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = env.PORT;
 
 const onListen = () => {
-  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-  if (
-    process.env.NODE_ENV !== "test" &&
-    process.env.RUN_REMINDER_WORKER === "true"
-  ) {
+  console.log(`Server running on port ${PORT} in ${env.NODE_ENV} mode`);
+  if (env.NODE_ENV !== "test" && env.RUN_REMINDER_WORKER) {
     startReminderJob();
   }
 };
@@ -109,7 +99,7 @@ const devCertPath = path.resolve(process.cwd(), "certs", "dev-cert.pem");
 const devKeyPath = path.resolve(process.cwd(), "certs", "dev-key.pem");
 
 if (
-  process.env.NODE_ENV === "development" &&
+  env.NODE_ENV === "development" &&
   fs.existsSync(devCertPath) &&
   fs.existsSync(devKeyPath)
 ) {
