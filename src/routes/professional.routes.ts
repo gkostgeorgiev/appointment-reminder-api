@@ -47,6 +47,39 @@ const resendVerificationLimiter = rateLimit({
   },
 });
 
+const loginMessage = {
+  ok: false,
+  status: 429,
+  message: "Too many login attempts. Please try again later.",
+};
+
+// Keyed by IP: catches an attacker hammering many accounts from one source.
+const loginIpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: loginMessage,
+});
+
+// Keyed by the submitted email: catches an attacker grinding one account's
+// password across rotating/distributed IPs, which the IP limiter can't see.
+const loginEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: loginMessage,
+  keyGenerator: (req) => {
+    const email = req.body?.email;
+    return typeof email === "string" && email.trim()
+      ? email.trim().toLowerCase()
+      : "unknown";
+  },
+});
+
 router.post(
   "/register",
   validate(registerProfessionalSchema),
@@ -55,6 +88,8 @@ router.post(
 
 router.post(
   "/login",
+  loginIpLimiter,
+  loginEmailLimiter,
   validate(loginProfessionalSchema),
   catchAsync(loginProfessional),
 );
