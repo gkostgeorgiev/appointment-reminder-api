@@ -5,7 +5,9 @@ import {
   loginProfessional,
   logoutProfessional,
   registerProfessional,
+  resendVerificationEmail,
   resetPassword,
+  verifyEmail,
 } from "../controllers/professional.controller.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
@@ -14,7 +16,9 @@ import {
   forgotPasswordSchema,
   loginProfessionalSchema,
   registerProfessionalSchema,
+  resendVerificationSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
 } from "../validators/professionalSchemas.js";
 
 const router = Router();
@@ -28,6 +32,18 @@ const forgotPasswordLimiter = rateLimit({
     ok: false,
     status: 429,
     message: "Too many password reset requests. Please try again later.",
+  },
+});
+
+const resendVerificationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    ok: false,
+    status: 429,
+    message: "Too many verification email requests. Please try again later.",
   },
 });
 
@@ -67,6 +83,19 @@ router.post(
   "/reset-password",
   validate(resetPasswordSchema),
   catchAsync(resetPassword),
+);
+
+router.post(
+  "/verify-email",
+  validate(verifyEmailSchema),
+  catchAsync(verifyEmail),
+);
+
+router.post(
+  "/resend-verification",
+  resendVerificationLimiter,
+  validate(resendVerificationSchema),
+  catchAsync(resendVerificationEmail),
 );
 
 export default router;

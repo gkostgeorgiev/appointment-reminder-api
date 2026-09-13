@@ -15,3 +15,16 @@ export const sendPasswordResetEmail = async (to: string, rawToken: string) => {
 <p>If you didn't request this, you can safely ignore this email.</p>`,
   });
 };
+
+export const sendVerificationEmail = async (to: string, rawToken: string) => {
+  const verifyUrl = `${env.FRONTEND_URL}/verify-email?token=${rawToken}`;
+
+  return resend.emails.send({
+    from: env.EMAIL_FROM,
+    to,
+    subject: "Verify your email",
+    html: `<p>Click the link below to verify your email address. This link expires in 24 hours.</p>
+<p><a href="${verifyUrl}">${verifyUrl}</a></p>
+<p>If you didn't create an account, you can safely ignore this email.</p>`,
+  });
+};

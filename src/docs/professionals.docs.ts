@@ -34,14 +34,16 @@
  *                 type: string
  *                 minLength: 1
  *                 example: Dentist
+ *     description: >
+ *       Creates the account and emails a verification link (valid 24 hours)
+ *       via Resend. No session is issued at this point - `data` contains no
+ *       token, and no cookies are set. The account must be verified (see
+ *       `/verify-email`) before `/login` will succeed. Outside production,
+ *       `data.verificationToken` also carries the raw token directly, so it
+ *       can be verified without needing a real, deliverable inbox.
  *     responses:
  *       201:
- *         description: >
- *           Professional registered successfully. The JWT is also set as an
- *           httpOnly `token` cookie (plus a companion `csrfToken` cookie for
- *           CSRF protection on subsequent cookie-authenticated requests) -
- *           `data.token` is included for clients using the `Authorization`
- *           header instead of the cookie.
+ *         description: Professional registered successfully; a verification email has been sent.
  *         content:
  *           application/json:
  *             schema:
@@ -54,7 +56,7 @@
  *                   type: integer
  *                 data:
  *                   type: object
- *                   required: [id, email, profession, token]
+ *                   required: [id, email, profession]
  *                   properties:
  *                     id:
  *                       type: string
@@ -63,8 +65,9 @@
  *                       format: email
  *                     profession:
  *                       type: string
- *                     token:
+ *                     verificationToken:
  *                       type: string
+ *                       description: Only present when NODE_ENV !== "production".
  */
 
 /**
@@ -116,6 +119,8 @@
  *                   properties:
  *                     token:
  *                       type: string
+ *       403:
+ *         description: Credentials are valid, but the account's email has not been verified yet
  */
 
 /**
@@ -250,6 +255,108 @@
  *                       example: Password has been reset successfully. Please log in.
  *       400:
  *         description: Invalid or expired reset token
+ */
+
+/**
+ * @swagger
+ * /api/v1/professionals/verify-email:
+ *   post:
+ *     summary: Verify email using a verification token
+ *     tags: [Professionals]
+ *     security: []
+ *     description: >
+ *       Consumes the single-use token emailed on registration (or by
+ *       `/resend-verification`). On success, marks the account verified so
+ *       that `/login` will succeed.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: 9f1c2e...64-hex-chars
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [ok, status, data]
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                 status:
+ *                   type: integer
+ *                 data:
+ *                   type: object
+ *                   required: [message]
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: Email verified successfully. Please log in.
+ *       400:
+ *         description: Invalid or expired verification token
+ */
+
+/**
+ * @swagger
+ * /api/v1/professionals/resend-verification:
+ *   post:
+ *     summary: Resend the email verification link
+ *     tags: [Professionals]
+ *     security: []
+ *     description: >
+ *       Always responds with the same generic message whether or not an
+ *       account exists for the given email, or whether it's already
+ *       verified, to avoid revealing account existence/state. If the
+ *       account exists and is not yet verified, a new verification link
+ *       (valid 24 hours) is emailed via Resend. Outside production,
+ *       `data.verificationToken` also carries the raw token directly when
+ *       one was (re)issued, so it can be verified without a real inbox.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: doctor@example.com
+ *     responses:
+ *       200:
+ *         description: Generic confirmation message
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [ok, status, data]
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                 status:
+ *                   type: integer
+ *                 data:
+ *                   type: object
+ *                   required: [message]
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: If an account with that email exists and is not yet verified, a verification link has been sent.
+ *                     verificationToken:
+ *                       type: string
+ *                       description: Only present outside production, and only when a token was actually (re)issued.
+ *       429:
+ *         description: Too many verification email requests from this client
  */
 
 /**

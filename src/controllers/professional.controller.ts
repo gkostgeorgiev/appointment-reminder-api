@@ -9,9 +9,14 @@ import {
   TOKEN_COOKIE,
   tokenCookieOptions,
 } from "../config/cookies.js";
+import { env } from "../config/env.js";
 import { Professional } from "../models/Professional.js";
-import { sendPasswordResetEmail } from "../services/emailService.js";
+import { sendPasswordResetEmail, sendVerificationEmail } from "../services/emailService.js";
 import { sendResponse } from "../utils/apiResponse.js";
+import {
+  generateVerificationToken,
+  hashVerificationToken,
+} from "../utils/emailVerification.js";
 import { ErrorResponse } from "../utils/errorResponse.js";
 import { generateToken } from "../utils/jwt.js";
 import { generateResetToken, hashResetToken } from "../utils/passwordReset.js";
@@ -19,7 +24,9 @@ import {
   forgotPasswordSchema,
   loginProfessionalSchema,
   registerProfessionalSchema,
+  resendVerificationSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
 } from "../validators/professionalSchemas.js";
 
 const setAuthCookies = (res: Response, token: string) => {
@@ -31,30 +38,36 @@ type RegisterInput = z.infer<typeof registerProfessionalSchema>["body"];
 type LoginInput = z.infer<typeof loginProfessionalSchema>["body"];
 type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>["body"];
 type ResetPasswordInput = z.infer<typeof resetPasswordSchema>["body"];
+type VerifyEmailInput = z.infer<typeof verifyEmailSchema>["body"];
+type ResendVerificationInput = z.infer<typeof resendVerificationSchema>["body"];
 
 // @desc    Register professional
 // @route   POST /api/professionals/register
 // @access  Public
 export const registerProfessional = async (req: Request, res: Response) => {
   const { email, password, profession } = req.validated!.body as RegisterInput;
+  const { rawToken, tokenHash, expiresAt } = generateVerificationToken();
+
   const professional = await Professional.create({
     email,
     password,
     profession,
+    emailVerificationTokenHash: tokenHash,
+    emailVerificationTokenExpires: expiresAt,
   });
 
-  const token = generateToken({
-    userId: professional.id,
-    email: professional.email,
+  sendVerificationEmail(professional.email, rawToken).catch((error) => {
+    console.error("Failed to send verification email:", error);
   });
-
-  setAuthCookies(res, token);
 
   return sendResponse(res, 201, {
     id: professional._id,
     email: professional.email,
     profession: professional.profession,
-    token,
+    // dev/test convenience: lets you verify without a real inbox (Resend's
+    // sandbox mode won't deliver to arbitrary test addresses) - never exposed
+    // in production.
+    ...(env.NODE_ENV !== "production" ? { verificationToken: rawToken } : {}),
   });
 };
 
@@ -74,6 +87,10 @@ export const loginProfessional = async (req: Request, res: Response) => {
 
   if (!isMatch) {
     throw new ErrorResponse("Invalid credentials", 401);
+  }
+
+  if (!professional.isEmailVerified) {
+    throw new ErrorResponse("Please verify your email before logging in", 403);
   }
 
   const token = generateToken({
@@ -148,5 +165,66 @@ export const resetPassword = async (req: Request, res: Response) => {
 
   return sendResponse(res, 200, {
     message: "Password has been reset successfully. Please log in.",
+  });
+};
+
+// @desc    Verify email using a verification token
+// @route   POST /api/professionals/verify-email
+// @access  Public
+export const verifyEmail = async (req: Request, res: Response) => {
+  const { token } = req.validated!.body as VerifyEmailInput;
+
+  const tokenHash = hashVerificationToken(token);
+
+  const professional = await Professional.findOne({
+    emailVerificationTokenHash: tokenHash,
+    emailVerificationTokenExpires: { $gt: new Date() },
+  }).select("+emailVerificationTokenHash +emailVerificationTokenExpires");
+
+  if (!professional) {
+    throw new ErrorResponse("Invalid or expired verification token", 400);
+  }
+
+  professional.isEmailVerified = true;
+  professional.emailVerificationTokenHash = null;
+  professional.emailVerificationTokenExpires = null;
+  await professional.save({ validateModifiedOnly: true });
+
+  return sendResponse(res, 200, {
+    message: "Email verified successfully. Please log in.",
+  });
+};
+
+// @desc    Resend the email verification link
+// @route   POST /api/professionals/resend-verification
+// @access  Public
+export const resendVerificationEmail = async (req: Request, res: Response) => {
+  const { email } = req.validated!.body as ResendVerificationInput;
+
+  const professional = await Professional.findOne({ email });
+
+  let rawToken: string | undefined;
+
+  if (professional && !professional.isEmailVerified) {
+    const generated = generateVerificationToken();
+    rawToken = generated.rawToken;
+
+    professional.emailVerificationTokenHash = generated.tokenHash;
+    professional.emailVerificationTokenExpires = generated.expiresAt;
+    await professional.save({ validateModifiedOnly: true });
+
+    sendVerificationEmail(professional.email, rawToken).catch((error) => {
+      console.error("Failed to send verification email:", error);
+    });
+  }
+
+  return sendResponse(res, 200, {
+    message:
+      "If an account with that email exists and is not yet verified, a verification link has been sent.",
+    // dev/test convenience, see registerProfessional - omitted in production,
+    // and only present when a token was actually (re)issued.
+    ...(env.NODE_ENV !== "production" && rawToken
+      ? { verificationToken: rawToken }
+      : {}),
   });
 };

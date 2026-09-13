@@ -8,6 +8,9 @@ export interface IProfessional extends Document {
   passwordChangedAt?: Date;
   passwordResetTokenHash?: string | null;
   passwordResetTokenExpires?: Date | null;
+  isEmailVerified: boolean;
+  emailVerificationTokenHash?: string | null;
+  emailVerificationTokenExpires?: Date | null;
   comparePassword(candidate: string): Promise<boolean>;
   createdAt: Date;
   updatedAt: Date;
@@ -42,6 +45,21 @@ const professionalSchema = new Schema<IProfessional>(
       index: true,
     },
     passwordResetTokenExpires: {
+      type: Date,
+      select: false,
+      default: null,
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationTokenHash: {
+      type: String,
+      select: false,
+      default: null,
+      index: true,
+    },
+    emailVerificationTokenExpires: {
       type: Date,
       select: false,
       default: null,

@@ -109,7 +109,9 @@ Base route:
 
 POST /api/professionals/register
 
-Creates a new professional account.
+Creates a new professional account and emails a verification link (valid 24 hours) via Resend. No session is created at this point — the response contains no token, and no cookies are set. The account must be verified before login will succeed.
+
+Outside production (`NODE_ENV !== "production"`), the response also includes `verificationToken` — the raw token, directly usable with `/verify-email` — so you can test with made-up addresses (e.g. `test1@example.com`) without needing a real, deliverable inbox. `/resend-verification` does the same. This is never present in production.
 
 Request body
 
@@ -123,11 +125,43 @@ Request body
 
 ---
 
+## Verify Email
+
+POST /api/professionals/verify-email
+
+Consumes the single-use token from the verification email and marks the account verified.
+
+Request body
+
+```json
+{
+  "token": "raw-token-from-email"
+}
+```
+
+---
+
+## Resend Verification Email
+
+POST /api/professionals/resend-verification
+
+Rate-limited (5/hour per client). Always returns the same generic message, whether or not the account exists or is already verified, so it can't be used to enumerate accounts. Sends a new verification link only if the account exists and isn't verified yet.
+
+Request body
+
+```json
+{
+  "email": "ivan@example.com"
+}
+```
+
+---
+
 ## Login
 
 POST /api/professionals/login
 
-Returns a JWT token, both in the response body and as an httpOnly cookie.
+Returns a JWT token, both in the response body and as an httpOnly cookie. Fails with `403` if the account's email hasn't been verified yet.
 
 Request body
 
@@ -146,7 +180,7 @@ Response
 }
 ```
 
-The same JWT is also set as an httpOnly `token` cookie, plus a companion, readable `csrfToken` cookie. Register does the same on success. Browser clients should authenticate via the cookie (`fetch(url, { credentials: "include" })`); non-browser clients can keep using `Authorization: Bearer <token>` from the JSON response — both are accepted on every protected route.
+The same JWT is also set as an httpOnly `token` cookie, plus a companion, readable `csrfToken` cookie. Browser clients should authenticate via the cookie (`fetch(url, { credentials: "include" })`); non-browser clients can keep using `Authorization: Bearer <token>` from the JSON response — both are accepted on every protected route.
 
 If you authenticate via the cookie, every mutating request (`POST`/`PUT`/`PATCH`/`DELETE`) must also send an `X-CSRF-Token` header equal to the `csrfToken` cookie's value (read it with client-side JS — it is not httpOnly). This is a CSRF mitigation required by the cookie being `SameSite=None`; Bearer-header requests don't need this header.
 
