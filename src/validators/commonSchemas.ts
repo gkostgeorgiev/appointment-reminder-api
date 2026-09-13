@@ -14,3 +14,22 @@ export const objectIdSchema = (entityName: string) =>
     .refine((val) => mongoose.Types.ObjectId.isValid(val), {
       message: `Invalid ${entityName} id`,
     });
+
+export const paginationQuerySchema = (defaultLimit: number, maxLimit: number) => ({
+  page: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .default(1)
+    .openapi({ example: 1 }),
+
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(maxLimit)
+    .optional()
+    .default(defaultLimit)
+    .openapi({ example: defaultLimit }),
+});

@@ -120,9 +120,24 @@
  *           minLength: 1
  *         description: Partial first or last name match (case-insensitive)
  *         example: "John"
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 200
+ *           default: 50
  *     responses:
  *       200:
- *         description: List of customers
+ *         description: Paginated list of customers
  *         content:
  *           application/json:
  *             schema:
@@ -134,29 +149,43 @@
  *                 status:
  *                   type: integer
  *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                       firstName:
- *                         type: string
- *                       lastName:
- *                         type: string
- *                       phone:
- *                         type: string
- *                       email:
- *                         type: string
- *                         format: email
- *                       professional:
- *                         type: string
- *                       createdAt:
- *                         type: string
- *                         format: date-time
- *                       updatedAt:
- *                         type: string
- *                         format: date-time
+ *                   type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           firstName:
+ *                             type: string
+ *                           lastName:
+ *                             type: string
+ *                           phone:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                             format: email
+ *                           professional:
+ *                             type: string
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         total:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
  */
 
 /**

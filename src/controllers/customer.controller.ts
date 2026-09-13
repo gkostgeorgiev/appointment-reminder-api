@@ -14,6 +14,8 @@ type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>["body"];
 type GetCustomersQueryInput = {
   phone?: string;
   name?: string;
+  page?: number;
+  limit?: number;
 };
 
 // @desc    Create customer
@@ -40,8 +42,12 @@ export const createCustomer = async (req: Request, res: Response) => {
 // @route   GET /api/customers
 // @access  Private
 export const getAllCustomers = async (req: Request, res: Response) => {
-  const { phone, name } = (req.validated?.query ??
+  const { phone, name, page, limit } = (req.validated?.query ??
     req.query) as GetCustomersQueryInput;
+
+  const pageNum = Number(page) || 1;
+  const limitNum = Number(limit) || 50;
+  const skip = (pageNum - 1) * limitNum;
 
   const filter: Record<string, unknown> = {
     professional: req.user!.userId,
@@ -63,9 +69,23 @@ export const getAllCustomers = async (req: Request, res: Response) => {
     ];
   }
 
-  const customers = await Customer.find(filter).sort({ createdAt: -1 });
+  const [customers, total] = await Promise.all([
+    Customer.find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(skip)
+      .limit(limitNum),
+    Customer.countDocuments(filter),
+  ]);
 
-  return sendResponse(res, 200, customers);
+  return sendResponse(res, 200, {
+    items: customers,
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum),
+    },
+  });
 };
 
 // @desc    Delete a customer

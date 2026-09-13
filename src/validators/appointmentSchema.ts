@@ -1,6 +1,6 @@
 import { z } from "../config/openapi.js";
 import { appointmentStatuses } from "../models/Appointment.js";
-import { objectIdParam, objectIdSchema } from "./commonSchemas.js";
+import { objectIdParam, objectIdSchema, paginationQuerySchema } from "./commonSchemas.js";
 
 export const futureDateSchema = z
   .iso
@@ -105,6 +105,8 @@ export const getAppointmentsSchema = z.object({
         .openapi({ example: "week" }),
 
       customer: objectIdSchema("customer").optional(),
+
+      ...paginationQuerySchema(100, 500),
     })
     .refine(
       (data) => {

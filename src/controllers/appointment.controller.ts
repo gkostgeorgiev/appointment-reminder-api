@@ -63,8 +63,12 @@ export const createAppointment = async (req: Request, res: Response) => {
 // @route   GET /api/appointments
 // @access  Private
 export const getAppointments = async (req: Request, res: Response) => {
-  const { from, to, start, range, customer } = req.validated!
+  const { from, to, start, range, customer, page, limit } = req.validated!
     .query as GetAppointmentsQuery;
+
+  const pageNum = page ?? 1;
+  const limitNum = limit ?? 100;
+  const skip = (pageNum - 1) * limitNum;
 
   const filter: FilterQuery<IAppointment> = {
     professional: req.user!.userId,
@@ -105,13 +109,37 @@ export const getAppointments = async (req: Request, res: Response) => {
     if (to) {
       filter.start.$lte = getEndOfDay(new Date(to));
     }
+  } else if (!customer) {
+    // No filter at all: default to a rolling window instead of full history.
+    const now = new Date();
+    const rollingStart = getStartOfDay(
+      new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+    );
+    const rollingEnd = getEndOfDay(
+      new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+    );
+
+    filter.start = { $gte: rollingStart, $lte: rollingEnd };
   }
 
-  const appointments = await Appointment.find(filter)
-    .sort({ start: 1 })
-    .populate("customer", "firstName lastName phone email");
+  const [appointments, total] = await Promise.all([
+    Appointment.find(filter)
+      .sort({ start: 1, _id: 1 })
+      .skip(skip)
+      .limit(limitNum)
+      .populate("customer", "firstName lastName phone email"),
+    Appointment.countDocuments(filter),
+  ]);
 
-  return sendResponse(res, 200, appointments);
+  return sendResponse(res, 200, {
+    items: appointments,
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum),
+    },
+  });
 };
 
 // @desc    Update single appointment

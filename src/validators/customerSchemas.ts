@@ -1,4 +1,5 @@
 import { z } from "../config/openapi.js";
+import { paginationQuerySchema } from "./commonSchemas.js";
 
 export const createCustomerSchema = z.object({
   body: z
@@ -82,6 +83,8 @@ export const getCustomersSchema = z.object({
         .min(1)
         .optional()
         .openapi({ example: "John" }),
+
+      ...paginationQuerySchema(50, 200),
     })
     .strict(),
 });

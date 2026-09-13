@@ -283,7 +283,29 @@ Request body
 
 GET /api/customers
 
-Returns all customers belonging to the authenticated professional.
+Returns customers belonging to the authenticated professional, paginated.
+
+### Query Parameters
+
+```
+?phone=888
+?name=John
+?page=1
+?limit=50
+```
+
+`limit` defaults to 50, max 200. Response shape:
+
+```json
+{
+  "ok": true,
+  "status": 200,
+  "data": {
+    "items": [ /* customers */ ],
+    "pagination": { "page": 1, "limit": 50, "total": 132, "totalPages": 3 }
+  }
+}
+```
 
 ---
 
@@ -360,7 +382,7 @@ Request body
 
 GET /api/appointments
 
-Returns appointments belonging to the authenticated professional.
+Returns appointments belonging to the authenticated professional, paginated.
 
 Supports flexible date filtering.
 
@@ -386,7 +408,35 @@ Predefined ranges
 ?range=month
 ```
 
-Appointments are returned sorted by start time.
+Filter by customer (returns that customer's full history if used alone, with no date filter)
+
+```
+?customer=customerId
+```
+
+Pagination
+
+```
+?page=1
+?limit=100
+```
+
+`limit` defaults to 100, max 500.
+
+If none of `start`/`range`/`from`/`to`/`customer` are given, the query defaults to a rolling window of 7 days back through 30 days forward from now, instead of every appointment ever created — this bounds the response for accounts with a lot of history while still showing the near-term schedule by default.
+
+Appointments are returned sorted by start time. Response shape:
+
+```json
+{
+  "ok": true,
+  "status": 200,
+  "data": {
+    "items": [ /* appointments */ ],
+    "pagination": { "page": 1, "limit": 100, "total": 42, "totalPages": 1 }
+  }
+}
+```
 
 ---
 

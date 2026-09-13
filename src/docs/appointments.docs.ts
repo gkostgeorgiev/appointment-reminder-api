@@ -112,7 +112,12 @@
  *     security:
  *       - bearerAuth: []
  *       - cookieAuth: []
- *     description: Use only one filtering method per request (start, range, or from/to)
+ *     description: >
+ *       Use only one filtering method per request (start, range, or from/to).
+ *       If none of start/range/from/to/customer are given, defaults to a
+ *       rolling window of 7 days back through 30 days forward from now
+ *       (a `customer` filter alone still returns that customer's full
+ *       history, unfiltered by date).
  *     parameters:
  *       - in: query
  *         name: start
@@ -147,9 +152,24 @@
  *           Can be combined with a date filter; on its own, returns the
  *           customer's full appointment history.
  *         example: 65f1b9e9d02c9a0012c5c9a1
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 500
+ *           default: 100
  *     responses:
  *       200:
- *         description: List of appointments
+ *         description: Paginated list of appointments
  *         content:
  *           application/json:
  *             schema:
@@ -161,48 +181,62 @@
  *                 status:
  *                   type: integer
  *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                       professional:
- *                         type: string
- *                       customer:
+ *                   type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
  *                         type: object
  *                         properties:
  *                           _id:
  *                             type: string
- *                           firstName:
+ *                           professional:
  *                             type: string
- *                           lastName:
+ *                           customer:
+ *                             type: object
+ *                             properties:
+ *                               _id:
+ *                                 type: string
+ *                               firstName:
+ *                                 type: string
+ *                               lastName:
+ *                                 type: string
+ *                               phone:
+ *                                 type: string
+ *                               email:
+ *                                 type: string
+ *                                 format: email
+ *                           start:
  *                             type: string
- *                           phone:
+ *                             format: date-time
+ *                           duration:
+ *                             type: integer
+ *                           service:
  *                             type: string
- *                           email:
+ *                           notes:
  *                             type: string
- *                             format: email
- *                       start:
- *                         type: string
- *                         format: date-time
- *                       duration:
- *                         type: integer
- *                       service:
- *                         type: string
- *                       notes:
- *                         type: string
- *                       status:
- *                         type: string
- *                         enum: [scheduled, completed, cancelled, no-show]
- *                       reminderSent:
- *                         type: boolean
- *                       createdAt:
- *                         type: string
- *                         format: date-time
- *                       updatedAt:
- *                         type: string
- *                         format: date-time
+ *                           status:
+ *                             type: string
+ *                             enum: [scheduled, completed, cancelled, no-show]
+ *                           reminderSent:
+ *                             type: boolean
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         total:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
  */
 
 /**
