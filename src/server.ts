@@ -12,7 +12,7 @@ import morgan from "morgan";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 
-import { connectDB, disconnectDB } from "./config/db.js";
+import { connectDB, disconnectDB, getDbStatus } from "./config/db.js";
 import { swaggerSpec } from "./config/swagger.js";
 import { startReminderJob } from "./jobs/reminderJob.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -64,7 +64,11 @@ app.use(requestLogger);
 
 // Test route
 app.get("/health", (_req, res) => {
-  res.status(200).json({ status: "ok" });
+  const db = getDbStatus();
+
+  res
+    .status(db.connected ? 200 : 503)
+    .json({ status: db.connected ? "ok" : "error", db: db.state });
 });
 
 apiRouter.use("/professionals", professionalRoutes);
