@@ -36,6 +36,7 @@ const envSchema = z.object({
     .string()
     .regex(e164Regex, "must be in E.164 format, e.g. +1234567890")
     .optional(),
+  SENTRY_DSN: z.string().url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

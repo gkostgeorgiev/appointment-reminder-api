@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon --watch src --signal SIGTERM --exec tsx src/server.ts",
-    "kill": "taskkill //F //IM node.exe || true",
+    "kill": "node scripts/kill-node.js",
     "start": "node dist/server.js"
   },
   "keywords": [],
@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.3",
+    "@sentry/node": "^10.74.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",

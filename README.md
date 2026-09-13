@@ -612,9 +612,13 @@ RUN_REMINDER_WORKER=true
 RESEND_API_KEY=...
 EMAIL_FROM=noreply@your-domain.example.com
 FRONTEND_URL=https://your-frontend.example.com
+
+SENTRY_DSN=https://...@...ingest.sentry.io/...
 ```
 
 `CORS_ORIGIN` is a comma-separated list of allowed origins (e.g. `https://app.example.com,https://staging.example.com`). It's required because cookie-based auth needs `credentials: true` on CORS, which the spec forbids combining with a wildcard `*` origin.
+
+`SENTRY_DSN` is optional — when unset, error reporting is disabled and nothing else changes. When set, unexpected 5xx errors, failed reminder-job ticks, and uncaught exceptions/unhandled rejections are reported to Sentry (see `src/config/sentry.ts`); 4xx validation/not-found errors are never reported. Error messages are scrubbed for phone-number- and email-shaped substrings before being sent.
 
 ---
 

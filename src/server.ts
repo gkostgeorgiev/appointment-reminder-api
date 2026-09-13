@@ -1,5 +1,4 @@
-import { env } from "./config/env.js";
-
+import * as Sentry from "@sentry/node";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Router } from "express";
@@ -12,6 +11,8 @@ import morgan from "morgan";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 
+import { env } from "./config/env.js";
+import { initSentry } from "./config/sentry.js";
 import { connectDB, disconnectDB, getDbStatus } from "./config/db.js";
 import { swaggerSpec } from "./config/swagger.js";
 import { startReminderJob } from "./jobs/reminderJob.js";
@@ -24,6 +25,8 @@ import devRoutes from "./routes/dev.routes.js";
 import professionalRoutes from "./routes/professional.routes.js";
 
 const API_VERSION = "v1";
+
+initSentry();
 
 const app = express();
 const apiRouter = Router();
@@ -146,3 +149,17 @@ const shutdown = (signal: string) => {
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
+  Sentry.captureException(err);
+  // captureException only queues the event; wait (bounded) for it to actually
+  // reach Sentry before shutdown() proceeds to process.exit().
+  Sentry.flush(2000).finally(() => shutdown("uncaughtException"));
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+  Sentry.captureException(reason);
+  Sentry.flush(2000).finally(() => shutdown("unhandledRejection"));
+});

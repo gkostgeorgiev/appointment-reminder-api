@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import { NextFunction, Request, Response } from "express";
 import { MongoServerError } from "mongodb";
 
@@ -30,6 +31,10 @@ export const errorHandler = (
     message = Object.values(err.errors)
       .map((val: any) => val.message)
       .join(", ");
+  }
+
+  if (statusCode >= 500) {
+    Sentry.captureException(err);
   }
 
   res.status(statusCode).json({
