@@ -3,3 +3,4 @@ node_modules
 dist
 certs
 settings.local.json
+package-lock.json

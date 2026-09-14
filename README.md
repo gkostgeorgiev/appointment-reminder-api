@@ -627,15 +627,15 @@ SENTRY_DSN=https://...@...ingest.sentry.io/...
 Install dependencies
 
 ```
-npm install
+yarn install
 ```
 
-Cookie-based auth uses `SameSite=None` cookies, which only get set/sent over HTTPS. To exercise that locally, generate a trusted local certificate with [mkcert](https://github.com/FiloSottile/mkcert) and save it as `certs/dev-cert.pem` / `certs/dev-key.pem` (gitignored) — `npm run dev` will pick it up automatically and serve over HTTPS. Without it, dev falls back to plain HTTP and only the `Authorization: Bearer` auth path is testable locally.
+Cookie-based auth uses `SameSite=None` cookies, which only get set/sent over HTTPS. To exercise that locally, generate a trusted local certificate with [mkcert](https://github.com/FiloSottile/mkcert) and save it as `certs/dev-cert.pem` / `certs/dev-key.pem` (gitignored) — `yarn dev` will pick it up automatically and serve over HTTPS. Without it, dev falls back to plain HTTP and only the `Authorization: Bearer` auth path is testable locally.
 
 Start development server
 
 ```
-npm run dev
+yarn dev
 ```
 
 ---

@@ -5,16 +5,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```
-npm install       # install dependencies
-npm run dev       # nodemon + tsx, watches src/, restarts on change (loads .env)
-npm run build     # tsc -> dist/
-npm start         # node dist/server.js (run build first)
-npm run kill      # force-kill any lingering node.exe (Windows helper for stuck dev servers)
+yarn install      # install dependencies
+yarn dev          # nodemon + tsx, watches src/, restarts on change (loads .env)
+yarn build        # tsc -> dist/
+yarn start        # node dist/server.js (run build first)
+yarn kill         # force-kill any lingering node.exe (Windows helper for stuck dev servers)
 ```
 
 There is no test suite and no lint/format tooling configured in this repo (no test files, no eslint/prettier config, no `test`/`lint` script in `package.json`). Don't invent commands for these.
 
-Node is pinned via `volta` to 20.19.4. Module system is native ESM (`"type": "module"`) with `nodenext` resolution — relative imports inside `src/` must use explicit `.js` extensions (e.g. `import x from "./config/db.js"`), even though the source files are `.ts`.
+Package manager is Yarn Classic (1.x), pinned via `volta` alongside Node — don't use `npm` (no `package-lock.json` is committed; `yarn.lock` is the source of truth). Node is pinned via `volta` to 20.19.4. Module system is native ESM (`"type": "module"`) with `nodenext` resolution — relative imports inside `src/` must use explicit `.js` extensions (e.g. `import x from "./config/db.js"`), even though the source files are `.ts`.
 
 Required env vars (see `.env`, not committed): `PORT`, `MONGO_URI`, `JWT_SECRET`, `CORS_ORIGIN`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `RUN_REMINDER_WORKER`, `NODE_ENV`, `RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_URL`. Required env vars are documented in `.env` (not committed). The actual `.env` file contains secrets and must not be read or modified. `PERSONAL_NUMBER` is additionally needed for the dev-only `/api/dev/test-sms` route. `CORS_ORIGIN` is a comma-separated allowlist of origins passed to `cors({ origin, credentials: true })` in `server.ts` — required because credentialed CORS cannot use a wildcard origin. `RESEND_API_KEY`/`EMAIL_FROM` are used by `src/services/emailService.ts` to send password-reset emails via Resend; `FRONTEND_URL` is the base URL used to build the reset link (`${FRONTEND_URL}/reset-password?token=...`) — no frontend exists yet, so this just needs to point at wherever that route will eventually live. `SENTRY_DSN` is optional — when unset, `initSentry()` (`src/config/sentry.ts`) logs and no-ops, and nothing else changes.
 
