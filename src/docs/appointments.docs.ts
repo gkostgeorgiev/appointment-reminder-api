@@ -95,6 +95,8 @@
  *                       enum: [scheduled, completed, cancelled, no-show]
  *                     reminderSent:
  *                       type: boolean
+ *                     reminderAttempts:
+ *                       type: integer
  *                     createdAt:
  *                       type: string
  *                       format: date-time
@@ -220,6 +222,8 @@
  *                             enum: [scheduled, completed, cancelled, no-show]
  *                           reminderSent:
  *                             type: boolean
+ *                           reminderAttempts:
+ *                             type: integer
  *                           createdAt:
  *                             type: string
  *                             format: date-time
@@ -336,6 +340,8 @@
  *                       enum: [scheduled, completed, cancelled, no-show]
  *                     reminderSent:
  *                       type: boolean
+ *                     reminderAttempts:
+ *                       type: integer
  *                     createdAt:
  *                       type: string
  *                       format: date-time

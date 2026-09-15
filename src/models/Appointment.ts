@@ -21,6 +21,8 @@ export interface IAppointment extends Document {
   status: (typeof appointmentStatuses)[number];
 
   reminderSent: boolean;
+  reminderAttempts: number;
+  reminderNextAttemptAt: Date | null;
 
   createdAt: Date;
   updatedAt: Date;
@@ -39,6 +41,8 @@ export interface IAppointmentPopulated extends Document {
   status: (typeof appointmentStatuses)[number];
 
   reminderSent: boolean;
+  reminderAttempts: number;
+  reminderNextAttemptAt: Date | null;
 
   createdAt: Date;
   updatedAt: Date;
@@ -81,6 +85,14 @@ const appointmentSchema = new Schema(
     reminderSent: {
       type: Boolean,
       default: false,
+    },
+    reminderAttempts: {
+      type: Number,
+      default: 0,
+    },
+    reminderNextAttemptAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true },
