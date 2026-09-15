@@ -1,5 +1,5 @@
 import { z } from "../config/openapi.js";
-import { paginationQuerySchema } from "./commonSchemas.js";
+import { objectIdParam, paginationQuerySchema } from "./commonSchemas.js";
 
 export const createCustomerSchema = z.object({
   body: z
@@ -33,6 +33,8 @@ export const createCustomerSchema = z.object({
 });
 
 export const updateCustomerSchema = z.object({
+  params: objectIdParam("id", "customer"),
+
   body: z
     .object({
       firstName: z
@@ -66,6 +68,10 @@ export const updateCustomerSchema = z.object({
     .refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided",
     }),
+});
+
+export const deleteCustomerSchema = z.object({
+  params: objectIdParam("id", "customer"),
 });
 
 export const getCustomersSchema = z.object({

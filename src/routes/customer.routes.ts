@@ -10,10 +10,10 @@ import { validate } from "../middleware/validate.js";
 import { catchAsync } from "../utils/catchAsync.js";
 import {
   createCustomerSchema,
+  deleteCustomerSchema,
   getCustomersSchema,
   updateCustomerSchema,
 } from "../validators/customerSchemas.js";
-import { objectIdParam } from "../validators/commonSchemas.js";
 
 const router = Router();
 
@@ -29,14 +29,14 @@ router.post(
 router.delete(
   "/:id",
   authMiddleware,
-  validate(objectIdParam("id", "customer")),
+  validate(deleteCustomerSchema),
   catchAsync(deleteCustomer),
 );
 
 router.patch(
   "/:id",
   authMiddleware,
-  validate(objectIdParam("id", "customer").and(updateCustomerSchema)),
+  validate(updateCustomerSchema),
   catchAsync(updateCustomer),
 );
 
