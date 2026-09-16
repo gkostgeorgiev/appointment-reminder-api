@@ -444,6 +444,8 @@ Appointments are returned sorted by start time. Response shape:
 
 GET /api/v1/appointments/:id
 
+Returns a specific appointment, with the customer populated (firstName, lastName, phone, email).
+
 ---
 
 ## Update Appointment

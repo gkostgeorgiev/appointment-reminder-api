@@ -240,6 +240,79 @@
 /**
  * @swagger
  * /api/v1/appointments/{id}:
+ *   get:
+ *     summary: Get a single appointment
+ *     tags: [Appointments]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 65f1b9e9d02c9a0012c5c9a1
+ *     responses:
+ *       200:
+ *         description: Appointment found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [ok, status, data]
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                 status:
+ *                   type: integer
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     professional:
+ *                       type: string
+ *                     customer:
+ *                       type: object
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                         firstName:
+ *                           type: string
+ *                         lastName:
+ *                           type: string
+ *                         phone:
+ *                           type: string
+ *                         email:
+ *                           type: string
+ *                           format: email
+ *                     start:
+ *                       type: string
+ *                       format: date-time
+ *                     duration:
+ *                       type: integer
+ *                     service:
+ *                       type: string
+ *                     notes:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                       enum: [scheduled, completed, cancelled, no-show]
+ *                     reminderSent:
+ *                       type: boolean
+ *                     reminderAttempts:
+ *                       type: integer
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
+ */
+
+/**
+ * @swagger
+ * /api/v1/appointments/{id}:
  *   patch:
  *     summary: Update appointment
  *     tags: [Appointments]

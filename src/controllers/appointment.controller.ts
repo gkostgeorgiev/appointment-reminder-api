@@ -188,6 +188,22 @@ export const getAppointments = async (req: Request, res: Response) => {
   });
 };
 
+// @desc    Get a single appointment
+// @route   GET /api/appointments/:id
+// @access  Private
+export const getAppointmentById = async (req: Request, res: Response) => {
+  const appointment = await Appointment.findOne({
+    _id: req.params.id,
+    professional: req.user!.userId,
+  }).populate("customer", "firstName lastName phone email");
+
+  if (!appointment) {
+    throw new ErrorResponse("Appointment not found", 404);
+  }
+
+  return sendResponse(res, 200, appointment);
+};
+
 // @desc    Update single appointment
 // @route   PATCH /api/appointments/:id
 // @access  Private

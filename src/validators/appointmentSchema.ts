@@ -77,6 +77,10 @@ export const updateAppointmentSchema = z.object({
     }),
 });
 
+export const getAppointmentByIdSchema = z.object({
+  params: objectIdParam("id", "appointment"),
+});
+
 export const deleteAppointmentSchema = z.object({
   params: objectIdParam("id", "appointment"),
 });

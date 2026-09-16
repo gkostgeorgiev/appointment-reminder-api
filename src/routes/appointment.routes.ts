@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createAppointment,
   deleteAppointment,
+  getAppointmentById,
   getAppointments,
   updateAppointment,
 } from "../controllers/appointment.controller.js";
@@ -11,6 +12,7 @@ import { catchAsync } from "../utils/catchAsync.js";
 import {
   createAppointmentSchema,
   deleteAppointmentSchema,
+  getAppointmentByIdSchema,
   getAppointmentsSchema,
   updateAppointmentSchema,
 } from "../validators/appointmentSchema.js";
@@ -22,6 +24,13 @@ router.get(
   authMiddleware,
   validate(getAppointmentsSchema),
   catchAsync(getAppointments),
+);
+
+router.get(
+  "/:id",
+  authMiddleware,
+  validate(getAppointmentByIdSchema),
+  catchAsync(getAppointmentById),
 );
 
 router.post(
