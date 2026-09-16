@@ -6,7 +6,10 @@ const resend = new Resend(env.RESEND_API_KEY);
 export const sendPasswordResetEmail = async (to: string, rawToken: string) => {
   const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${rawToken}`;
 
-  return resend.emails.send({
+  // The Resend SDK never rejects on an API-level failure (bad key, rate
+  // limit, invalid domain, etc.) - it resolves to { data: null, error }
+  // either way. Throw explicitly so callers can use a normal try/catch.
+  const { error } = await resend.emails.send({
     from: env.EMAIL_FROM,
     to,
     subject: "Reset your password",
@@ -14,12 +17,16 @@ export const sendPasswordResetEmail = async (to: string, rawToken: string) => {
 <p><a href="${resetUrl}">${resetUrl}</a></p>
 <p>If you didn't request this, you can safely ignore this email.</p>`,
   });
+
+  if (error) {
+    throw new Error(`Failed to send password reset email: ${error.message}`);
+  }
 };
 
 export const sendVerificationEmail = async (to: string, rawToken: string) => {
   const verifyUrl = `${env.FRONTEND_URL}/verify-email?token=${rawToken}`;
 
-  return resend.emails.send({
+  const { error } = await resend.emails.send({
     from: env.EMAIL_FROM,
     to,
     subject: "Verify your email",
@@ -27,4 +34,8 @@ export const sendVerificationEmail = async (to: string, rawToken: string) => {
 <p><a href="${verifyUrl}">${verifyUrl}</a></p>
 <p>If you didn't create an account, you can safely ignore this email.</p>`,
   });
+
+  if (error) {
+    throw new Error(`Failed to send verification email: ${error.message}`);
+  }
 };

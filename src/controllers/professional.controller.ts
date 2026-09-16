@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import * as Sentry from "@sentry/node";
 import { Request, Response } from "express";
 import z from "zod";
 import {
@@ -65,9 +66,12 @@ export const registerProfessional = async (req: Request, res: Response) => {
     emailVerificationTokenExpires: expiresAt,
   });
 
-  sendVerificationEmail(professional.email, rawToken).catch((error) => {
+  try {
+    await sendVerificationEmail(professional.email, rawToken);
+  } catch (error) {
     console.error("Failed to send verification email:", error);
-  });
+    Sentry.captureException(error);
+  }
 
   return sendResponse(res, 201, {
     id: professional._id,
@@ -191,11 +195,18 @@ export const forgotPassword = async (req: Request, res: Response) => {
     professional.passwordResetTokenExpires = expiresAt;
     await professional.save({ validateModifiedOnly: true });
 
-    sendPasswordResetEmail(professional.email, rawToken).catch((error) => {
+    try {
+      await sendPasswordResetEmail(professional.email, rawToken);
+    } catch (error) {
       console.error("Failed to send password reset email:", error);
-    });
+      Sentry.captureException(error);
+    }
   }
 
+  // The message and status stay identical whether the account exists, and
+  // whether the send above succeeded or failed - anything that varies here
+  // based on account existence or delivery outcome would let an attacker
+  // enumerate registered emails.
   return sendResponse(res, 200, {
     message:
       "If an account with that email exists, a password reset link has been sent.",
@@ -286,11 +297,16 @@ export const resendVerificationEmail = async (req: Request, res: Response) => {
     professional.emailVerificationTokenExpires = generated.expiresAt;
     await professional.save({ validateModifiedOnly: true });
 
-    sendVerificationEmail(professional.email, rawToken).catch((error) => {
+    try {
+      await sendVerificationEmail(professional.email, rawToken);
+    } catch (error) {
       console.error("Failed to send verification email:", error);
-    });
+      Sentry.captureException(error);
+    }
   }
 
+  // Same anti-enumeration reasoning as forgotPassword: the response never
+  // varies with account existence or delivery outcome.
   return sendResponse(res, 200, {
     message:
       "If an account with that email exists and is not yet verified, a verification link has been sent.",
