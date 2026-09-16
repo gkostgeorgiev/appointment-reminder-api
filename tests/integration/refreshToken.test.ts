@@ -9,7 +9,7 @@ import {
 } from "vitest";
 import request from "supertest";
 import type { Express } from "express";
-import type { MongoMemoryServer } from "mongodb-memory-server";
+import type { MongoMemoryReplSet } from "mongodb-memory-server";
 import { setupTestApp, teardownTestApp, clearDatabase } from "../helpers/setup.js";
 import { registerAndLogin, extractCookieValue } from "../helpers/auth.js";
 
@@ -22,7 +22,7 @@ vi.mock("../../src/services/emailService.js", () => ({
 }));
 
 let app: Express;
-let mongod: MongoMemoryServer;
+let mongod: MongoMemoryReplSet;
 
 beforeAll(async () => {
   ({ app, mongod } = await setupTestApp());

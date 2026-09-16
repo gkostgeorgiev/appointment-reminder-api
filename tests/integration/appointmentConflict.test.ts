@@ -8,7 +8,7 @@ import {
   vi,
 } from "vitest";
 import type { Express } from "express";
-import type { MongoMemoryServer } from "mongodb-memory-server";
+import type { MongoMemoryReplSet } from "mongodb-memory-server";
 import { setupTestApp, teardownTestApp, clearDatabase } from "../helpers/setup.js";
 import { registerAndLogin } from "../helpers/auth.js";
 
@@ -23,7 +23,7 @@ vi.mock("../../src/services/emailService.js", () => ({
 }));
 
 let app: Express;
-let mongod: MongoMemoryServer;
+let mongod: MongoMemoryReplSet;
 
 beforeAll(async () => {
   ({ app, mongod } = await setupTestApp());
@@ -116,6 +116,29 @@ describe("appointment conflict detection", () => {
       .patch(`/api/v1/appointments/${secondId}`)
       .send({ start: otherStart.toISOString(), notes: "confirmed" });
     expect(selfUpdate.status).toBe(200);
+  });
+
+  it("only lets one of two truly concurrent overlapping creates succeed", async () => {
+    const pro = await registerAndLogin(app, "conflict5@example.com");
+    const customerId = await createCustomer(pro.authed, "359888100006");
+
+    const baseStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const overlapStart = new Date(baseStart.getTime() + 15 * 60 * 1000);
+
+    const [first, second] = await Promise.all([
+      pro.authed
+        .post("/api/v1/appointments")
+        .send({ customer: customerId, start: baseStart.toISOString(), duration: 30 }),
+      pro.authed
+        .post("/api/v1/appointments")
+        .send({ customer: customerId, start: overlapStart.toISOString(), duration: 30 }),
+    ]);
+
+    const statuses = [first.status, second.status].sort();
+    expect(statuses).toEqual([201, 409]);
+
+    const listRes = await pro.authed.get("/api/v1/appointments");
+    expect(listRes.body.data.items).toHaveLength(1);
   });
 
   it("does not consider appointments under a different professional as conflicting", async () => {

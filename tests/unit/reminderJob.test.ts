@@ -7,7 +7,7 @@ import {
   afterEach,
   vi,
 } from "vitest";
-import type { MongoMemoryServer } from "mongodb-memory-server";
+import type { MongoMemoryReplSet } from "mongodb-memory-server";
 import { setupTestApp, teardownTestApp, clearDatabase } from "../helpers/setup.js";
 
 vi.mock("../../src/services/smsService.js", () => ({
@@ -18,7 +18,7 @@ vi.mock("@sentry/node", () => ({
   captureMessage: vi.fn(),
 }));
 
-let mongod: MongoMemoryServer;
+let mongod: MongoMemoryReplSet;
 let runReminderTick: () => Promise<void>;
 let MAX_REMINDER_ATTEMPTS: number;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

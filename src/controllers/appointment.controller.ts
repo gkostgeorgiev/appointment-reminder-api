@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
-import { FilterQuery } from "mongoose";
+import mongoose, { ClientSession, FilterQuery } from "mongoose";
 import z from "zod";
 import { Appointment, IAppointment } from "../models/Appointment.js";
+import { AppointmentLock } from "../models/AppointmentLock.js";
 import { Customer } from "../models/Customer.js";
 import { sendResponse } from "../utils/apiResponse.js";
 import {
@@ -21,6 +22,37 @@ type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>["body"];
 type GetAppointmentsQuery = z.infer<typeof getAppointmentsSchema>["query"];
 type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>["body"];
 
+// Runs `fn` inside a transaction, first bumping a per-professional lock
+// document so concurrent create/update calls for the same professional
+// serialize instead of both reading "no conflict" and committing an
+// overlapping appointment. See AppointmentLock for why this is needed on
+// top of the transaction itself. `session.withTransaction` retries the
+// callback automatically on the resulting transient write conflict.
+const withSchedulingLock = async <T>(
+  professionalId: string,
+  fn: (session: ClientSession) => Promise<T>,
+): Promise<T> => {
+  const session = await mongoose.startSession();
+
+  try {
+    let result: T;
+
+    await session.withTransaction(async () => {
+      await AppointmentLock.findOneAndUpdate(
+        { professional: professionalId },
+        { $inc: { version: 1 } },
+        { upsert: true, session },
+      );
+
+      result = await fn(session);
+    });
+
+    return result!;
+  } finally {
+    await session.endSession();
+  }
+};
+
 // @desc    Create appointment
 // @route   POST /api/appointments
 // @access  Private
@@ -37,24 +69,38 @@ export const createAppointment = async (req: Request, res: Response) => {
     throw new ErrorResponse("Customer not found", 404);
   }
 
-  const hasConflict = await hasAppointmentConflict(
+  const appointment = await withSchedulingLock(
     req.user!.userId,
-    new Date(start),
-    duration,
+    async (session) => {
+      const hasConflict = await hasAppointmentConflict(
+        req.user!.userId,
+        new Date(start),
+        duration,
+        undefined,
+        session,
+      );
+
+      if (hasConflict) {
+        throw new ErrorResponse(
+          "Appointment overlaps with another booking",
+          409,
+        );
+      }
+
+      const doc = new Appointment({
+        professional: req.user!.userId,
+        customer,
+        start: new Date(start),
+        duration,
+        service,
+        notes,
+      });
+
+      await doc.save({ session });
+
+      return doc;
+    },
   );
-
-  if (hasConflict) {
-    throw new ErrorResponse("Appointment overlaps with another booking", 409);
-  }
-
-  const appointment = await Appointment.create({
-    professional: req.user!.userId,
-    customer,
-    start: new Date(start),
-    duration,
-    service,
-    notes,
-  });
 
   return sendResponse(res, 201, appointment);
 };
@@ -159,43 +205,44 @@ export const updateAppointment = async (req: Request, res: Response) => {
     }
   }
 
-  const existing = await Appointment.findOne({
-    _id: req.params.id,
-    professional: req.user!.userId,
-  });
-
-  if (!existing) {
-    throw new ErrorResponse("Appointment not found", 404);
-  }
-
-  const start = updateData.start
-    ? new Date(updateData.start)
-    : existing.start;
-  const duration = updateData.duration ?? existing.duration;
-
-  const hasConflict = await hasAppointmentConflict(
+  const appointment = await withSchedulingLock(
     req.user!.userId,
-    start,
-    duration,
-    existing._id.toString(),
-  );
+    async (session) => {
+      const existing = await Appointment.findOne({
+        _id: req.params.id,
+        professional: req.user!.userId,
+      }).session(session);
 
-  if (hasConflict) {
-    throw new ErrorResponse("Appointment overlaps with another booking", 409);
-  }
+      if (!existing) {
+        throw new ErrorResponse("Appointment not found", 404);
+      }
 
-  const appointment = await Appointment.findOneAndUpdate(
-    {
-      _id: req.params.id,
-      professional: req.user!.userId,
+      const start = updateData.start
+        ? new Date(updateData.start)
+        : existing.start;
+      const duration = updateData.duration ?? existing.duration;
+
+      const hasConflict = await hasAppointmentConflict(
+        req.user!.userId,
+        start,
+        duration,
+        existing._id.toString(),
+        session,
+      );
+
+      if (hasConflict) {
+        throw new ErrorResponse(
+          "Appointment overlaps with another booking",
+          409,
+        );
+      }
+
+      Object.assign(existing, updateData);
+      await existing.save({ session });
+
+      return existing;
     },
-    updateData,
-    { new: true, runValidators: true },
   );
-
-  if (!appointment) {
-    throw new ErrorResponse("Appointment not found", 404);
-  }
 
   return sendResponse(res, 200, appointment);
 };
@@ -221,6 +268,7 @@ export const hasAppointmentConflict = async (
   start: Date,
   duration: number,
   excludeAppointmentId?: string,
+  session?: ClientSession,
 ) => {
   const end = getAppointmentEnd(start, duration);
 
@@ -236,7 +284,7 @@ export const hasAppointmentConflict = async (
     query._id = { $ne: excludeAppointmentId };
   }
 
-  const conflict = await Appointment.exists(query);
+  const conflict = await Appointment.exists(query).session(session ?? null);
 
   return !!conflict;
 };
