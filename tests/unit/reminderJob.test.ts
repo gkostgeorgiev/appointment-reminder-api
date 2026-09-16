@@ -168,4 +168,39 @@ describe("reminder job retry/backoff", () => {
 
     expect(sendSmsMock).toHaveBeenCalledTimes(1);
   });
+
+  it("never double-sends across two truly overlapping ticks (the reminderClaimedUntil lease)", async () => {
+    // A slow send widens the window in which a second, overlapping tick
+    // (e.g. one that started because the first one ran long) could race the
+    // first for the same appointment.
+    sendSmsMock.mockImplementation(
+      () => new Promise((resolve) => setTimeout(resolve, 20)),
+    );
+    await createDueAppointment();
+
+    await Promise.all([runReminderTick(), runReminderTick()]);
+
+    expect(sendSmsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets a later tick reclaim an appointment once its claim lease has expired", async () => {
+    sendSmsMock.mockResolvedValue(undefined);
+    const appointment = await createDueAppointment();
+
+    // Simulate a previous tick that claimed this appointment and then
+    // crashed before finishing (send + flip reminderSent, or the
+    // failure/backoff bookkeeping) - the lease is in the past, so it's
+    // abandoned rather than permanently stuck.
+    await Appointment.updateOne(
+      { _id: appointment._id },
+      { $set: { reminderClaimedUntil: new Date(Date.now() - 1000) } },
+    );
+
+    await runReminderTick();
+
+    expect(sendSmsMock).toHaveBeenCalledTimes(1);
+    const reloaded = await Appointment.findById(appointment._id);
+    expect(reloaded.reminderSent).toBe(true);
+    expect(reloaded.reminderClaimedUntil).toBeNull();
+  });
 });

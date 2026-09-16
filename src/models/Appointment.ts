@@ -23,6 +23,7 @@ export interface IAppointment extends Document {
   reminderSent: boolean;
   reminderAttempts: number;
   reminderNextAttemptAt: Date | null;
+  reminderClaimedUntil: Date | null;
 
   createdAt: Date;
   updatedAt: Date;
@@ -43,6 +44,7 @@ export interface IAppointmentPopulated extends Document {
   reminderSent: boolean;
   reminderAttempts: number;
   reminderNextAttemptAt: Date | null;
+  reminderClaimedUntil: Date | null;
 
   createdAt: Date;
   updatedAt: Date;
@@ -91,6 +93,13 @@ const appointmentSchema = new Schema(
       default: 0,
     },
     reminderNextAttemptAt: {
+      type: Date,
+      default: null,
+    },
+    // A short-lived lease claimed atomically before sending, so two
+    // overlapping reminder-job ticks can't both send the same reminder. See
+    // reminderJob.ts.
+    reminderClaimedUntil: {
       type: Date,
       default: null,
     },
