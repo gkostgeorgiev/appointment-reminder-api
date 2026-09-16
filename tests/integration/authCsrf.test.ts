@@ -88,21 +88,16 @@ describe("auth + CSRF flow", () => {
     expect(res.status).toBe(200);
   });
 
-  it("allows a Bearer-header mutating request with no cookies and no CSRF header", async () => {
-    const pro = await registerAndLogin(app, "csrf5@example.com");
-
-    const res = await request(app)
-      .post("/api/v1/customers")
-      .set("Authorization", `Bearer ${pro.token}`)
-      .send(newCustomerPayload("359888200005"));
-
-    expect(res.status).toBe(201);
-  });
-
-  it("rejects a garbage/invalid JWT", async () => {
+  it("rejects a garbage/invalid token cookie", async () => {
     const res = await request(app)
       .get("/api/v1/customers")
-      .set("Authorization", "Bearer not-a-real-jwt");
+      .set("Cookie", "token=not-a-real-jwt");
+
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects a request with no token at all", async () => {
+    const res = await request(app).get("/api/v1/customers");
 
     expect(res.status).toBe(401);
   });
@@ -121,7 +116,7 @@ describe("auth + CSRF flow", () => {
 
     const res = await request(app)
       .get("/api/v1/customers")
-      .set("Authorization", `Bearer ${pro.token}`);
+      .set("Cookie", pro.cookieHeader);
 
     expect(res.status).toBe(401);
   });

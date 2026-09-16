@@ -4,6 +4,7 @@ import {
   forgotPassword,
   loginProfessional,
   logoutProfessional,
+  refreshAccessToken,
   registerProfessional,
   resendVerificationEmail,
   resetPassword,
@@ -93,6 +94,8 @@ router.post(
   validate(loginProfessionalSchema),
   catchAsync(loginProfessional),
 );
+
+router.post("/refresh", catchAsync(refreshAccessToken));
 
 router.get(
   "/me",

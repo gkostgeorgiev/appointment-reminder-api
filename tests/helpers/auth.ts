@@ -3,7 +3,7 @@ import type { Express } from "express";
 
 export const TEST_PASSWORD = "TestPassword123!";
 
-const extractCookieValue = (
+export const extractCookieValue = (
   setCookieHeaders: string[] | undefined,
   name: string,
 ) => {
@@ -17,7 +17,7 @@ const extractCookieValue = (
 // a Secure cookie over the plain HTTP connection it uses internally, so we
 // capture the raw Set-Cookie values ourselves and attach them by hand instead
 // of relying on the agent's automatic jar.
-const buildCookieHeader = (setCookieHeaders: string[] | undefined) =>
+export const buildCookieHeader = (setCookieHeaders: string[] | undefined) =>
   (setCookieHeaders ?? []).map((c) => c.split(";")[0]).join("; ");
 
 export const registerAndLogin = async (app: Express, email: string) => {
@@ -54,7 +54,7 @@ export const registerAndLogin = async (app: Express, email: string) => {
     | undefined;
   const cookieHeader = buildCookieHeader(setCookies);
   const csrfToken = extractCookieValue(setCookies, "csrfToken")!;
-  const token = loginRes.body.data.token as string;
+  const refreshToken = extractCookieValue(setCookies, "refreshToken")!;
 
   // Convenience wrapper for tests that don't care about CSRF edge cases -
   // always attaches the cookie session + the correct CSRF header.
@@ -77,5 +77,5 @@ export const registerAndLogin = async (app: Express, email: string) => {
         .set("x-csrf-token", csrfToken),
   };
 
-  return { cookieHeader, csrfToken, token, authed };
+  return { cookieHeader, csrfToken, refreshToken, authed };
 };

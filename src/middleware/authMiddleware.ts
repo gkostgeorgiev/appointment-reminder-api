@@ -10,24 +10,13 @@ export const authMiddleware = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const cookieToken = req.cookies?.[TOKEN_COOKIE];
-  const authHeader = req.headers.authorization;
-
-  let token: string | undefined;
-  let viaCookie = false;
-
-  if (cookieToken) {
-    token = cookieToken;
-    viaCookie = true;
-  } else if (authHeader?.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
-  }
+  const token = req.cookies?.[TOKEN_COOKIE];
 
   if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  if (viaCookie && !SAFE_METHODS.has(req.method)) {
+  if (!SAFE_METHODS.has(req.method)) {
     const csrfHeader = req.headers[CSRF_HEADER];
     const csrfCookie = req.cookies?.[CSRF_COOKIE];
 

@@ -3,9 +3,12 @@ import { Request, Response } from "express";
 import z from "zod";
 import {
   clearCsrfCookieOptions,
+  clearRefreshTokenCookieOptions,
   clearTokenCookieOptions,
   CSRF_COOKIE,
   csrfCookieOptions,
+  REFRESH_TOKEN_COOKIE,
+  refreshTokenCookieOptions,
   TOKEN_COOKIE,
   tokenCookieOptions,
 } from "../config/cookies.js";
@@ -20,6 +23,7 @@ import {
 import { ErrorResponse } from "../utils/errorResponse.js";
 import { generateToken } from "../utils/jwt.js";
 import { generateResetToken, hashResetToken } from "../utils/passwordReset.js";
+import { generateRefreshToken, hashRefreshToken } from "../utils/refreshToken.js";
 import {
   forgotPasswordSchema,
   loginProfessionalSchema,
@@ -29,9 +33,14 @@ import {
   verifyEmailSchema,
 } from "../validators/professionalSchemas.js";
 
-const setAuthCookies = (res: Response, token: string) => {
-  res.cookie(TOKEN_COOKIE, token, tokenCookieOptions);
+const setAuthCookies = (
+  res: Response,
+  accessToken: string,
+  refreshToken: string,
+) => {
+  res.cookie(TOKEN_COOKIE, accessToken, tokenCookieOptions);
   res.cookie(CSRF_COOKIE, randomUUID(), csrfCookieOptions);
+  res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, refreshTokenCookieOptions);
 };
 
 type RegisterInput = z.infer<typeof registerProfessionalSchema>["body"];
@@ -98,19 +107,68 @@ export const loginProfessional = async (req: Request, res: Response) => {
     email: professional.email,
   });
 
-  setAuthCookies(res, token);
+  const { rawToken: refreshToken, tokenHash, expiresAt } = generateRefreshToken();
+  professional.refreshTokenHash = tokenHash;
+  professional.refreshTokenExpires = expiresAt;
+  await professional.save({ validateModifiedOnly: true });
 
-  return sendResponse(res, 200, {
-    token,
+  setAuthCookies(res, token, refreshToken);
+
+  return sendResponse(res, 200);
+};
+
+// @desc    Exchange a refresh token for a new access token
+// @route   POST /api/professionals/refresh
+// @access  Public (requires a valid refreshToken cookie)
+export const refreshAccessToken = async (req: Request, res: Response) => {
+  const rawToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
+
+  if (!rawToken) {
+    throw new ErrorResponse("Invalid or expired refresh token", 401);
+  }
+
+  const tokenHash = hashRefreshToken(rawToken);
+
+  const professional = await Professional.findOne({
+    refreshTokenHash: tokenHash,
+    refreshTokenExpires: { $gt: new Date() },
   });
+
+  if (!professional) {
+    throw new ErrorResponse("Invalid or expired refresh token", 401);
+  }
+
+  const token = generateToken({
+    userId: professional.id,
+    email: professional.email,
+  });
+
+  const {
+    rawToken: newRefreshToken,
+    tokenHash: newTokenHash,
+    expiresAt,
+  } = generateRefreshToken();
+  professional.refreshTokenHash = newTokenHash;
+  professional.refreshTokenExpires = expiresAt;
+  await professional.save({ validateModifiedOnly: true });
+
+  setAuthCookies(res, token, newRefreshToken);
+
+  return sendResponse(res, 200);
 };
 
 // @desc    Logout professional
 // @route   POST /api/professionals/logout
 // @access  Private
-export const logoutProfessional = async (_req: Request, res: Response) => {
+export const logoutProfessional = async (req: Request, res: Response) => {
+  await Professional.updateOne(
+    { _id: req.user!.userId },
+    { $set: { refreshTokenHash: null, refreshTokenExpires: null } },
+  );
+
   res.clearCookie(TOKEN_COOKIE, clearTokenCookieOptions);
   res.clearCookie(CSRF_COOKIE, clearCsrfCookieOptions);
+  res.clearCookie(REFRESH_TOKEN_COOKIE, clearRefreshTokenCookieOptions);
 
   return sendResponse(res, 200, { message: "Logged out" });
 };

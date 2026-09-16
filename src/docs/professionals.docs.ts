@@ -98,29 +98,57 @@
  *     responses:
  *       200:
  *         description: >
- *           Successful login. The JWT is also set as an httpOnly `token`
- *           cookie (plus a companion `csrfToken` cookie for CSRF protection
- *           on subsequent cookie-authenticated requests) - `data.token` is
- *           included for clients using the `Authorization` header instead
- *           of the cookie.
+ *           Successful login. Issues no token in the response body - the JWT
+ *           is set as an httpOnly `token` cookie, a companion `csrfToken`
+ *           cookie for CSRF protection on subsequent cookie-authenticated
+ *           requests, and an httpOnly `refreshToken` cookie (valid 30 days,
+ *           scoped to `/api/v1/professionals`) that `POST /refresh` accepts
+ *           to obtain a new `token` once the 1h access token expires.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               required: [ok, status, data]
+ *               required: [ok, status]
  *               properties:
  *                 ok:
  *                   type: boolean
  *                 status:
  *                   type: integer
- *                 data:
- *                   type: object
- *                   required: [token]
- *                   properties:
- *                     token:
- *                       type: string
  *       403:
  *         description: Credentials are valid, but the account's email has not been verified yet
+ */
+
+/**
+ * @swagger
+ * /api/v1/professionals/refresh:
+ *   post:
+ *     summary: Exchange a refresh token for a new access token
+ *     tags: [Professionals]
+ *     security: []
+ *     description: >
+ *       Reads the httpOnly `refreshToken` cookie set by `/login` (or a
+ *       previous `/refresh` call) and, if it is still valid, issues a new
+ *       `token`/`csrfToken`/`refreshToken` cookie triple - rotating the
+ *       refresh token on every use, so a previously-used refresh cookie is
+ *       immediately rejected afterwards. The refresh token is invalidated by
+ *       `/logout` and by a password change/reset. No request body; no CSRF
+ *       header required, since this endpoint doesn't require a prior access
+ *       token and has no exploitable cross-site effect.
+ *     responses:
+ *       200:
+ *         description: New access/CSRF/refresh cookies issued
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [ok, status]
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                 status:
+ *                   type: integer
+ *       401:
+ *         description: Missing, invalid, or expired refresh token
  */
 
 /**
@@ -130,7 +158,6 @@
  *     summary: Get current authenticated professional
  *     tags: [Professionals]
  *     security:
- *       - bearerAuth: []
  *       - cookieAuth: []
  *     responses:
  *       200:
@@ -366,26 +393,21 @@
  *     summary: Log out the current professional
  *     tags: [Professionals]
  *     security:
- *       - bearerAuth: []
  *       - cookieAuth: []
  *     description: >
- *       Clears the `token` and `csrfToken` cookies. Has no effect on a
- *       Bearer token already issued to a non-browser client - those simply
- *       expire per the JWT's own expiry. When authenticating via the
- *       cookie, this request also requires the `X-CSRF-Token` header (see
- *       the header parameter below); it is not required when authenticating
- *       via `Authorization: Bearer`.
+ *       Clears the `token`, `csrfToken`, and `refreshToken` cookies, and
+ *       invalidates the stored refresh token server-side so a copy of the
+ *       refresh cookie can no longer be used to obtain a new access token.
+ *       Requires the `X-CSRF-Token` header (see the parameter below).
  *     parameters:
  *       - in: header
  *         name: X-CSRF-Token
- *         required: false
+ *         required: true
  *         schema:
  *           type: string
  *         description: >
- *           Required when authenticating via the `token` cookie - must
- *           match the `csrfToken` cookie's value, or the request is
- *           rejected with 403. Not required for `Authorization: Bearer`
- *           requests.
+ *           Must match the `csrfToken` cookie's value, or the request is
+ *           rejected with 403.
  *     responses:
  *       200:
  *         description: Logged out successfully

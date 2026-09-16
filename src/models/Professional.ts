@@ -11,6 +11,8 @@ export interface IProfessional extends Document {
   isEmailVerified: boolean;
   emailVerificationTokenHash?: string | null;
   emailVerificationTokenExpires?: Date | null;
+  refreshTokenHash?: string | null;
+  refreshTokenExpires?: Date | null;
   comparePassword(candidate: string): Promise<boolean>;
   createdAt: Date;
   updatedAt: Date;
@@ -64,6 +66,17 @@ const professionalSchema = new Schema<IProfessional>(
       select: false,
       default: null,
     },
+    refreshTokenHash: {
+      type: String,
+      select: false,
+      default: null,
+      index: true,
+    },
+    refreshTokenExpires: {
+      type: Date,
+      select: false,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -76,6 +89,8 @@ professionalSchema.pre("save", async function (next) {
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   this.passwordChangedAt = new Date();
+  this.refreshTokenHash = null;
+  this.refreshTokenExpires = null;
   next();
 });
 

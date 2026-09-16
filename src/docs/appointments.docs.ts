@@ -12,24 +12,19 @@
  *     summary: Create appointment
  *     tags: [Appointments]
  *     security:
- *       - bearerAuth: []
  *       - cookieAuth: []
  *     description: >
- *       When authenticating via the `token` cookie, this request also
- *       requires the `X-CSRF-Token` header (see the header parameter
- *       below); it is not required when authenticating via
- *       `Authorization: Bearer`.
+ *       Requires the `X-CSRF-Token` header (see the header parameter
+ *       below).
  *     parameters:
  *       - in: header
  *         name: X-CSRF-Token
- *         required: false
+ *         required: true
  *         schema:
  *           type: string
  *         description: >
- *           Required when authenticating via the `token` cookie - must
- *           match the `csrfToken` cookie's value, or the request is
- *           rejected with 403. Not required for `Authorization: Bearer`
- *           requests.
+ *           Must match the `csrfToken` cookie's value, or the request is
+ *           rejected with 403.
  *     requestBody:
  *       required: true
  *       content:
@@ -112,7 +107,6 @@
  *     summary: Get appointments
  *     tags: [Appointments]
  *     security:
- *       - bearerAuth: []
  *       - cookieAuth: []
  *     description: >
  *       Use only one filtering method per request (start, range, or from/to).
@@ -250,13 +244,10 @@
  *     summary: Update appointment
  *     tags: [Appointments]
  *     security:
- *       - bearerAuth: []
  *       - cookieAuth: []
  *     description: >
- *       When authenticating via the `token` cookie, this request also
- *       requires the `X-CSRF-Token` header (see the header parameter
- *       below); it is not required when authenticating via
- *       `Authorization: Bearer`.
+ *       Requires the `X-CSRF-Token` header (see the header parameter
+ *       below).
  *     parameters:
  *       - in: path
  *         name: id
@@ -266,14 +257,12 @@
  *         example: 65f1b9e9d02c9a0012c5c9a1
  *       - in: header
  *         name: X-CSRF-Token
- *         required: false
+ *         required: true
  *         schema:
  *           type: string
  *         description: >
- *           Required when authenticating via the `token` cookie - must
- *           match the `csrfToken` cookie's value, or the request is
- *           rejected with 403. Not required for `Authorization: Bearer`
- *           requests.
+ *           Must match the `csrfToken` cookie's value, or the request is
+ *           rejected with 403.
  *     requestBody:
  *       required: true
  *       content:
@@ -357,13 +346,10 @@
  *     summary: Delete appointment
  *     tags: [Appointments]
  *     security:
- *       - bearerAuth: []
  *       - cookieAuth: []
  *     description: >
- *       When authenticating via the `token` cookie, this request also
- *       requires the `X-CSRF-Token` header (see the header parameter
- *       below); it is not required when authenticating via
- *       `Authorization: Bearer`.
+ *       Requires the `X-CSRF-Token` header (see the header parameter
+ *       below).
  *     parameters:
  *       - in: path
  *         name: id
@@ -373,14 +359,12 @@
  *         example: 65f1b9e9d02c9a0012c5c9a1
  *       - in: header
  *         name: X-CSRF-Token
- *         required: false
+ *         required: true
  *         schema:
  *           type: string
  *         description: >
- *           Required when authenticating via the `token` cookie - must
- *           match the `csrfToken` cookie's value, or the request is
- *           rejected with 403. Not required for `Authorization: Bearer`
- *           requests.
+ *           Must match the `csrfToken` cookie's value, or the request is
+ *           rejected with 403.
  *     responses:
  *       204:
  *         description: Appointment deleted

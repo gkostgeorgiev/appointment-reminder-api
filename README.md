@@ -161,7 +161,7 @@ Request body
 
 POST /api/professionals/login
 
-Returns a JWT token, both in the response body and as an httpOnly cookie. Fails with `403` if the account's email hasn't been verified yet.
+Issues no token in the response body. Sets an httpOnly `token` cookie (1h), a companion readable `csrfToken` cookie, and an httpOnly `refreshToken` cookie (30 days, scoped to the `/api/v1/professionals` path). Fails with `403` if the account's email hasn't been verified yet.
 
 Request body
 
@@ -172,17 +172,17 @@ Request body
 }
 ```
 
-Response
+Authenticate via the cookie (`fetch(url, { credentials: "include" })`) — it is the only supported auth method.
 
-```json
-{
-  "token": "jwt-token"
-}
-```
+Every mutating request (`POST`/`PUT`/`PATCH`/`DELETE`) must also send an `X-CSRF-Token` header equal to the `csrfToken` cookie's value (read it with client-side JS — it is not httpOnly). This is a CSRF mitigation required by the cookie being `SameSite=None`.
 
-The same JWT is also set as an httpOnly `token` cookie, plus a companion, readable `csrfToken` cookie. Browser clients should authenticate via the cookie (`fetch(url, { credentials: "include" })`); non-browser clients can keep using `Authorization: Bearer <token>` from the JSON response — both are accepted on every protected route.
+---
 
-If you authenticate via the cookie, every mutating request (`POST`/`PUT`/`PATCH`/`DELETE`) must also send an `X-CSRF-Token` header equal to the `csrfToken` cookie's value (read it with client-side JS — it is not httpOnly). This is a CSRF mitigation required by the cookie being `SameSite=None`; Bearer-header requests don't need this header.
+## Refresh
+
+POST /api/professionals/refresh
+
+Exchanges the `refreshToken` cookie for a new `token`/`csrfToken`/`refreshToken` cookie triple, so a client doesn't need to prompt for a password again just because the 1h access token expired. Rotates the refresh token on every call — a refresh cookie can only be used once. No request body, no CSRF header required. Fails with `401` if the refresh cookie is missing, invalid, or expired (including after `/logout` or a password reset/change, both of which invalidate it).
 
 ---
 
@@ -192,7 +192,7 @@ GET /api/professionals/me
 
 Returns information about the authenticated professional.
 
-Authentication required (cookie or `Authorization: Bearer` header).
+Authentication required (cookie).
 
 ---
 
@@ -200,7 +200,7 @@ Authentication required (cookie or `Authorization: Bearer` header).
 
 POST /api/professionals/logout
 
-Clears the `token` and `csrfToken` cookies. Authentication required. Has no effect on a Bearer token already handed to a non-browser client.
+Clears the `token`, `csrfToken`, and `refreshToken` cookies, and invalidates the stored refresh token server-side. Authentication required.
 
 ---
 
@@ -630,7 +630,7 @@ Install dependencies
 yarn install
 ```
 
-Cookie-based auth uses `SameSite=None` cookies, which only get set/sent over HTTPS. To exercise that locally, generate a trusted local certificate with [mkcert](https://github.com/FiloSottile/mkcert) and save it as `certs/dev-cert.pem` / `certs/dev-key.pem` (gitignored) — `yarn dev` will pick it up automatically and serve over HTTPS. Without it, dev falls back to plain HTTP and only the `Authorization: Bearer` auth path is testable locally.
+Cookie-based auth uses `SameSite=None` cookies, which only get set/sent over HTTPS — and it's the only auth method, so local HTTPS isn't optional for exercising it. Generate a trusted local certificate with [mkcert](https://github.com/FiloSottile/mkcert) and save it as `certs/dev-cert.pem` / `certs/dev-key.pem` (gitignored) — `yarn dev` will pick it up automatically and serve over HTTPS. Without it, dev falls back to plain HTTP and login/refresh/logout cookies won't be set or sent at all.
 
 Start development server
 
