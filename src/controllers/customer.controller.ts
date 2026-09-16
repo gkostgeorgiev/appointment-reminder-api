@@ -89,6 +89,22 @@ export const getAllCustomers = async (req: Request, res: Response) => {
   });
 };
 
+// @desc    Get a single customer
+// @route   GET /api/customers/:id
+// @access  Private
+export const getCustomerById = async (req: Request, res: Response) => {
+  const customer = await Customer.findOne({
+    _id: req.params.id,
+    professional: req.user!.userId,
+  });
+
+  if (!customer) {
+    throw new ErrorResponse("Customer not found", 404);
+  }
+
+  return sendResponse(res, 200, customer);
+};
+
 // @desc    Delete a customer
 // @route   DELETE /api/customers/:id
 // @access  Private

@@ -70,6 +70,10 @@ export const updateCustomerSchema = z.object({
     }),
 });
 
+export const getCustomerByIdSchema = z.object({
+  params: objectIdParam("id", "customer"),
+});
+
 export const deleteCustomerSchema = z.object({
   params: objectIdParam("id", "customer"),
 });

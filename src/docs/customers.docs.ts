@@ -185,6 +185,58 @@
 /**
  * @swagger
  * /api/v1/customers/{id}:
+ *   get:
+ *     summary: Get a single customer
+ *     tags: [Customers]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 65f1b9e9d02c9a0012c5c9a1
+ *     responses:
+ *       200:
+ *         description: Customer found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [ok, status, data]
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                 status:
+ *                   type: integer
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     firstName:
+ *                       type: string
+ *                     lastName:
+ *                       type: string
+ *                     phone:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                     professional:
+ *                       type: string
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
+ */
+
+/**
+ * @swagger
+ * /api/v1/customers/{id}:
  *   patch:
  *     summary: Update customer
  *     tags: [Customers]

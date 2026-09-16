@@ -87,7 +87,7 @@ This ensures complete isolation between different professionals using the system
 
 Example:
 
-/api
+/api/v1
 
 ---
 
@@ -103,11 +103,11 @@ Used for uptime monitoring and deployment verification.
 
 Base route:
 
-/api/professionals
+/api/v1/professionals
 
 ## Register Professional
 
-POST /api/professionals/register
+POST /api/v1/professionals/register
 
 Creates a new professional account and emails a verification link (valid 24 hours) via Resend. No session is created at this point — the response contains no token, and no cookies are set. The account must be verified before login will succeed.
 
@@ -127,7 +127,7 @@ Request body
 
 ## Verify Email
 
-POST /api/professionals/verify-email
+POST /api/v1/professionals/verify-email
 
 Consumes the single-use token from the verification email and marks the account verified.
 
@@ -143,7 +143,7 @@ Request body
 
 ## Resend Verification Email
 
-POST /api/professionals/resend-verification
+POST /api/v1/professionals/resend-verification
 
 Rate-limited (5/hour per client). Always returns the same generic message, whether or not the account exists or is already verified, so it can't be used to enumerate accounts. Sends a new verification link only if the account exists and isn't verified yet.
 
@@ -159,7 +159,7 @@ Request body
 
 ## Login
 
-POST /api/professionals/login
+POST /api/v1/professionals/login
 
 Issues no token in the response body. Sets an httpOnly `token` cookie (1h), a companion readable `csrfToken` cookie, and an httpOnly `refreshToken` cookie (30 days, scoped to the `/api/v1/professionals` path). Fails with `403` if the account's email hasn't been verified yet.
 
@@ -180,7 +180,7 @@ Every mutating request (`POST`/`PUT`/`PATCH`/`DELETE`) must also send an `X-CSRF
 
 ## Refresh
 
-POST /api/professionals/refresh
+POST /api/v1/professionals/refresh
 
 Exchanges the `refreshToken` cookie for a new `token`/`csrfToken`/`refreshToken` cookie triple, so a client doesn't need to prompt for a password again just because the 1h access token expired. Rotates the refresh token on every call — a refresh cookie can only be used once. No request body, no CSRF header required. Fails with `401` if the refresh cookie is missing, invalid, or expired (including after `/logout` or a password reset/change, both of which invalidate it).
 
@@ -188,7 +188,7 @@ Exchanges the `refreshToken` cookie for a new `token`/`csrfToken`/`refreshToken`
 
 ## Get Current Professional
 
-GET /api/professionals/me
+GET /api/v1/professionals/me
 
 Returns information about the authenticated professional.
 
@@ -198,7 +198,7 @@ Authentication required (cookie).
 
 ## Logout
 
-POST /api/professionals/logout
+POST /api/v1/professionals/logout
 
 Clears the `token`, `csrfToken`, and `refreshToken` cookies, and invalidates the stored refresh token server-side. Authentication required.
 
@@ -206,7 +206,7 @@ Clears the `token`, `csrfToken`, and `refreshToken` cookies, and invalidates the
 
 ## Forgot Password
 
-POST /api/professionals/forgot-password
+POST /api/v1/professionals/forgot-password
 
 Request body
 
@@ -230,7 +230,7 @@ If the account exists, an email is sent (via Resend) containing a reset link (`$
 
 ## Reset Password
 
-POST /api/professionals/reset-password
+POST /api/v1/professionals/reset-password
 
 Request body
 
@@ -249,7 +249,7 @@ On success, the password is updated and any JWT issued before the reset is inval
 
 Base route:
 
-/api/customers
+/api/v1/customers
 
 All customer records belong to the authenticated professional.
 
@@ -264,7 +264,7 @@ Customer fields:
 
 ## Create Customer
 
-POST /api/customers
+POST /api/v1/customers
 
 Request body
 
@@ -281,7 +281,7 @@ Request body
 
 ## Get Customers
 
-GET /api/customers
+GET /api/v1/customers
 
 Returns customers belonging to the authenticated professional, paginated.
 
@@ -311,7 +311,7 @@ Returns customers belonging to the authenticated professional, paginated.
 
 ## Get Customer
 
-GET /api/customers/:id
+GET /api/v1/customers/:id
 
 Returns a specific customer.
 
@@ -319,7 +319,7 @@ Returns a specific customer.
 
 ## Update Customer
 
-PATCH /api/customers/:id
+PATCH /api/v1/customers/:id
 
 Updates customer information.
 
@@ -327,7 +327,7 @@ Updates customer information.
 
 ## Delete Customer
 
-DELETE /api/customers/:id
+DELETE /api/v1/customers/:id
 
 Removes a customer.
 
@@ -337,7 +337,7 @@ Removes a customer.
 
 Base route:
 
-/api/appointments
+/api/v1/appointments
 
 Appointments represent scheduled meetings between a professional and a customer.
 
@@ -363,7 +363,7 @@ no-show
 
 ## Create Appointment
 
-POST /api/appointments
+POST /api/v1/appointments
 
 Request body
 
@@ -380,7 +380,7 @@ Request body
 
 ## Get Appointments
 
-GET /api/appointments
+GET /api/v1/appointments
 
 Returns appointments belonging to the authenticated professional, paginated.
 
@@ -442,19 +442,19 @@ Appointments are returned sorted by start time. Response shape:
 
 ## Get Appointment
 
-GET /api/appointments/:id
+GET /api/v1/appointments/:id
 
 ---
 
 ## Update Appointment
 
-PATCH /api/appointments/:id
+PATCH /api/v1/appointments/:id
 
 ---
 
 ## Delete Appointment
 
-DELETE /api/appointments/:id
+DELETE /api/v1/appointments/:id
 
 ---
 
@@ -658,7 +658,7 @@ Recommended environments:
 
 # Project Status
 
-MVP backend completed.
+MVP feature set implemented. This is **staging-ready, not a verified production deployment** — see the repo's issue tracker for the current, up-to-date list of release gates before going live; the summary below will drift out of date as issues close.
 
 Implemented:
 
@@ -672,10 +672,17 @@ Implemented:
 * Security middleware
 * Health endpoint
 
+As of 2026-09-16, the concurrency/correctness issues found in review are fixed: atomic refresh-token rotation and single-use password-reset/email-verification tokens, transaction-guarded booking to prevent double-booked slots, an enforced customer-deletion policy, reliable (Sentry-reported) email delivery failures, and an atomic per-appointment claim to prevent duplicate reminder SMS sends.
+
+Still open before a production deployment (tracked as issues, not exhaustively listed here):
+
+* Structured, PII-safe production logging (currently `console.log`/`console.error`)
+* Timeouts on HTTP/MongoDB/Twilio/Resend operations
+* A documented deployment/operations runbook and a formal secret-management process
+* Enforcing (not just documenting) the single-reminder-worker deployment invariant
+* Rate-limiting the refresh-token endpoint
+* Verify a real sending domain in Resend and update `EMAIL_FROM` to an address on it — password reset/verification emails currently only deliver to the Resend account owner's own email address (sandbox sender `onboarding@resend.dev`), which is fine for MVP development but won't reach real users in production.
+
 Next step:
 
 Frontend dashboard.
-
-Before going live (production):
-
-* Verify a real sending domain in Resend and update `EMAIL_FROM` to an address on it — password reset emails currently only deliver to the Resend account owner's own email address (sandbox sender `onboarding@resend.dev`), which is fine for MVP development but won't reach real users in production.

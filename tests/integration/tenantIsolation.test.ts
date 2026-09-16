@@ -51,6 +51,9 @@ describe("multi-tenant isolation", () => {
     expect(getRes.status).toBe(200);
     expect(getRes.body.data.items).toHaveLength(0);
 
+    const getByIdRes = await a.authed.get(`/api/v1/customers/${customerId}`);
+    expect(getByIdRes.status).toBe(404);
+
     const patchRes = await a.authed
       .patch(`/api/v1/customers/${customerId}`)
       .send({ firstName: "Hacked" });

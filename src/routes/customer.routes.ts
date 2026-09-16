@@ -3,6 +3,7 @@ import {
   createCustomer,
   deleteCustomer,
   getAllCustomers,
+  getCustomerById,
   updateCustomer,
 } from "../controllers/customer.controller.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
@@ -11,6 +12,7 @@ import { catchAsync } from "../utils/catchAsync.js";
 import {
   createCustomerSchema,
   deleteCustomerSchema,
+  getCustomerByIdSchema,
   getCustomersSchema,
   updateCustomerSchema,
 } from "../validators/customerSchemas.js";
@@ -18,6 +20,13 @@ import {
 const router = Router();
 
 router.get("/", authMiddleware, validate(getCustomersSchema), catchAsync(getAllCustomers));
+
+router.get(
+  "/:id",
+  authMiddleware,
+  validate(getCustomerByIdSchema),
+  catchAsync(getCustomerById),
+);
 
 router.post(
   "/",
