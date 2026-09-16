@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import z from "zod";
+import { Appointment } from "../models/Appointment.js";
 import { Customer } from "../models/Customer.js";
 import { sendResponse } from "../utils/apiResponse.js";
 import { ErrorResponse } from "../utils/errorResponse.js";
@@ -92,6 +93,23 @@ export const getAllCustomers = async (req: Request, res: Response) => {
 // @route   DELETE /api/customers/:id
 // @access  Private
 export const deleteCustomer = async (req: Request, res: Response) => {
+  // Policy: block deletion while the customer still has scheduled
+  // appointments, rather than silently orphaning them (a deleted customer's
+  // appointment would fail to populate in the reminder job). Completed/
+  // cancelled/no-show history doesn't block deletion.
+  const hasScheduledAppointments = await Appointment.exists({
+    customer: req.params.id,
+    professional: req.user!.userId,
+    status: "scheduled",
+  });
+
+  if (hasScheduledAppointments) {
+    throw new ErrorResponse(
+      "Cannot delete a customer with scheduled appointments. Cancel or complete them first.",
+      409,
+    );
+  }
+
   const deletedCustomer = await Customer.findOneAndDelete({
     _id: req.params.id,
     professional: req.user!.userId,

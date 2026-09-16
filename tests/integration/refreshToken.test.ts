@@ -100,6 +100,22 @@ describe("refresh token flow", () => {
     expect(refreshRes.status).toBe(401);
   });
 
+  it("only lets one of two truly concurrent refresh requests succeed", async () => {
+    const pro = await registerAndLogin(app, "refresh5@example.com");
+
+    const [first, second] = await Promise.all([
+      request(app)
+        .post("/api/v1/professionals/refresh")
+        .set("Cookie", `refreshToken=${pro.refreshToken}`),
+      request(app)
+        .post("/api/v1/professionals/refresh")
+        .set("Cookie", `refreshToken=${pro.refreshToken}`),
+    ]);
+
+    const statuses = [first.status, second.status].sort();
+    expect(statuses).toEqual([200, 401]);
+  });
+
   it("rejects the refresh cookie after a password reset", async () => {
     const pro = await registerAndLogin(app, "refresh4@example.com");
 

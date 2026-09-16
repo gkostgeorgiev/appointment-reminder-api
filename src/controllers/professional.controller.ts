@@ -128,11 +128,23 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
   }
 
   const tokenHash = hashRefreshToken(rawToken);
+  const {
+    rawToken: newRefreshToken,
+    tokenHash: newTokenHash,
+    expiresAt,
+  } = generateRefreshToken();
 
-  const professional = await Professional.findOne({
-    refreshTokenHash: tokenHash,
-    refreshTokenExpires: { $gt: new Date() },
-  });
+  // Atomic find-and-rotate: the filter only matches while refreshTokenHash
+  // still equals the presented token, so concurrent requests racing on the
+  // same refresh token can't both succeed - the second one's filter no
+  // longer matches once the first has rotated it.
+  const professional = await Professional.findOneAndUpdate(
+    {
+      refreshTokenHash: tokenHash,
+      refreshTokenExpires: { $gt: new Date() },
+    },
+    { $set: { refreshTokenHash: newTokenHash, refreshTokenExpires: expiresAt } },
+  );
 
   if (!professional) {
     throw new ErrorResponse("Invalid or expired refresh token", 401);
@@ -142,15 +154,6 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
     userId: professional.id,
     email: professional.email,
   });
-
-  const {
-    rawToken: newRefreshToken,
-    tokenHash: newTokenHash,
-    expiresAt,
-  } = generateRefreshToken();
-  professional.refreshTokenHash = newTokenHash;
-  professional.refreshTokenExpires = expiresAt;
-  await professional.save({ validateModifiedOnly: true });
 
   setAuthCookies(res, token, newRefreshToken);
 
@@ -207,18 +210,23 @@ export const resetPassword = async (req: Request, res: Response) => {
 
   const tokenHash = hashResetToken(token);
 
-  const professional = await Professional.findOne({
-    passwordResetTokenHash: tokenHash,
-    passwordResetTokenExpires: { $gt: new Date() },
-  }).select("+passwordResetTokenHash +passwordResetTokenExpires");
+  // Atomic find-and-clear: matching and clearing the token in one update
+  // means a concurrent request presenting the same (already-consumed) token
+  // simply won't match, instead of both requests reading the token as valid
+  // before either clears it.
+  const professional = await Professional.findOneAndUpdate(
+    {
+      passwordResetTokenHash: tokenHash,
+      passwordResetTokenExpires: { $gt: new Date() },
+    },
+    { $set: { passwordResetTokenHash: null, passwordResetTokenExpires: null } },
+  );
 
   if (!professional) {
     throw new ErrorResponse("Invalid or expired reset token", 400);
   }
 
   professional.password = password;
-  professional.passwordResetTokenHash = null;
-  professional.passwordResetTokenExpires = null;
   await professional.save();
 
   return sendResponse(res, 200, {
@@ -234,19 +242,26 @@ export const verifyEmail = async (req: Request, res: Response) => {
 
   const tokenHash = hashVerificationToken(token);
 
-  const professional = await Professional.findOne({
-    emailVerificationTokenHash: tokenHash,
-    emailVerificationTokenExpires: { $gt: new Date() },
-  }).select("+emailVerificationTokenHash +emailVerificationTokenExpires");
+  // Atomic find-and-clear, same reasoning as resetPassword: verifying and
+  // clearing the token in one update closes the window where two concurrent
+  // requests could both read the token as still valid.
+  const professional = await Professional.findOneAndUpdate(
+    {
+      emailVerificationTokenHash: tokenHash,
+      emailVerificationTokenExpires: { $gt: new Date() },
+    },
+    {
+      $set: {
+        isEmailVerified: true,
+        emailVerificationTokenHash: null,
+        emailVerificationTokenExpires: null,
+      },
+    },
+  );
 
   if (!professional) {
     throw new ErrorResponse("Invalid or expired verification token", 400);
   }
-
-  professional.isEmailVerified = true;
-  professional.emailVerificationTokenHash = null;
-  professional.emailVerificationTokenExpires = null;
-  await professional.save({ validateModifiedOnly: true });
 
   return sendResponse(res, 200, {
     message: "Email verified successfully. Please log in.",
