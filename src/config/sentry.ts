@@ -1,11 +1,7 @@
 import * as Sentry from "@sentry/node";
 import { env } from "./env.js";
-
-const PHONE_REGEX = /\+?\d[\d\s().-]{6,}\d/g;
-const EMAIL_REGEX = /[^\s<>"]+@[^\s<>"]+\.[^\s<>"]+/g;
-
-const scrub = (value: string) =>
-  value.replace(EMAIL_REGEX, "[REDACTED_EMAIL]").replace(PHONE_REGEX, "[REDACTED_PHONE]");
+import { logger } from "./logger.js";
+import { scrub } from "../utils/scrub.js";
 
 const beforeSend: NonNullable<Parameters<typeof Sentry.init>[0]>["beforeSend"] = (event) => {
   if (event.message) {
@@ -23,7 +19,7 @@ const beforeSend: NonNullable<Parameters<typeof Sentry.init>[0]>["beforeSend"] =
 
 export const initSentry = () => {
   if (!env.SENTRY_DSN) {
-    console.log("SENTRY_DSN not set, error reporting disabled");
+    logger.info("SENTRY_DSN not set, error reporting disabled");
     return;
   }
 
@@ -33,5 +29,5 @@ export const initSentry = () => {
     beforeSend,
   });
 
-  console.log("Sentry error reporting initialized");
+  logger.info("Sentry error reporting initialized");
 };

@@ -55,9 +55,7 @@ export const getAllCustomers = async (req: Request, res: Response) => {
   };
 
   if (phone) {
-    const normalizedPhone = phone.startsWith("0")
-      ? `359${phone.slice(1)}`
-      : phone;
+    const normalizedPhone = normalizeMsisdn(phone);
     const escapedPhone = normalizedPhone.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     filter.phone = { $regex: escapedPhone, $options: "i" };
   }
@@ -143,6 +141,10 @@ export const deleteCustomer = async (req: Request, res: Response) => {
 // @access  Private
 export const updateCustomer = async (req: Request, res: Response) => {
   const updateData = req.validated!.body as UpdateCustomerInput;
+
+  if (updateData.phone) {
+    updateData.phone = normalizeMsisdn(updateData.phone);
+  }
 
   const updatedCustomer = await Customer.findOneAndUpdate(
     {

@@ -81,6 +81,24 @@ const loginEmailLimiter = rateLimit({
   },
 });
 
+
+// Public (authenticates via the httpOnly refresh cookie, not authMiddleware).
+// skipSuccessfulRequests mirrors the login limiters: a legitimate client
+// rotating its token shouldn't count against the budget, only failed/invalid
+// attempts should.
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: {
+    ok: false,
+    status: 429,
+    message: "Too many refresh attempts, please try again later.",
+  },
+});
+
 router.post(
   "/register",
   validate(registerProfessionalSchema),
@@ -95,7 +113,7 @@ router.post(
   catchAsync(loginProfessional),
 );
 
-router.post("/refresh", catchAsync(refreshAccessToken));
+router.post("/refresh", refreshLimiter, catchAsync(refreshAccessToken));
 
 router.get(
   "/me",

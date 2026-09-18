@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/node";
 import cron from "node-cron";
+import { logger } from "../config/logger.js";
 import { Appointment } from "../models/Appointment.js";
 import { sendAppointmentReminder } from "../services/reminderService.js";
 import { IAppointmentPopulated } from "../models/Appointment.js";
@@ -34,7 +35,7 @@ export const runReminderTick = async () => {
       ],
     }).populate("customer", "firstName lastName phone");
   } catch (error) {
-    console.error("Reminder job tick failed:", error);
+    logger.error({ err: error }, "Reminder job tick failed");
     Sentry.captureException(error);
     return;
   }
@@ -72,7 +73,10 @@ export const runReminderTick = async () => {
         { $set: { reminderSent: true, reminderClaimedUntil: null } },
       );
     } catch (error) {
-      console.error("Reminder failed:", error);
+      logger.error(
+        { err: error, appointmentId: appointment._id.toString() },
+        "Reminder failed",
+      );
       Sentry.captureException(error);
 
       const attempts = appointment.reminderAttempts + 1;
@@ -105,7 +109,7 @@ export const runReminderTick = async () => {
 };
 
 export const startReminderJob = () => {
-  console.log("Reminder job started");
+  logger.info("Reminder job started");
 
   cron.schedule("*/5 * * * *", runReminderTick);
 };

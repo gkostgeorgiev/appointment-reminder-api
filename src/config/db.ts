@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { env } from "./env.js";
+import { logger } from "./logger.js";
 
 const READY_STATE_LABELS: Record<number, string> = {
   0: "disconnected",
@@ -20,19 +21,16 @@ const getDbStatus = () => {
 const connectDB = async () => {
   try {
     await mongoose.connect(env.MONGO_URI);
-    console.log("MongoDB Connected");
+    logger.info("MongoDB Connected");
   } catch (error) {
-    console.error(
-      "Database connection failed:",
-      error instanceof Error ? error.message : error,
-    );
+    logger.error({ err: error }, "Database connection failed");
     process.exit(1);
   }
 };
 
 const disconnectDB = async () => {
   await mongoose.connection.close();
-  console.log("MongoDB connection closed");
+  logger.info("MongoDB connection closed");
 };
 
 export { connectDB, disconnectDB, getDbStatus };

@@ -14,6 +14,7 @@ import {
   tokenCookieOptions,
 } from "../config/cookies.js";
 import { env } from "../config/env.js";
+import { logger } from "../config/logger.js";
 import { Professional } from "../models/Professional.js";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../services/emailService.js";
 import { sendResponse } from "../utils/apiResponse.js";
@@ -69,7 +70,7 @@ export const registerProfessional = async (req: Request, res: Response) => {
   try {
     await sendVerificationEmail(professional.email, rawToken);
   } catch (error) {
-    console.error("Failed to send verification email:", error);
+    logger.error({ err: error }, "Failed to send verification email");
     Sentry.captureException(error);
   }
 
@@ -198,7 +199,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     try {
       await sendPasswordResetEmail(professional.email, rawToken);
     } catch (error) {
-      console.error("Failed to send password reset email:", error);
+      logger.error({ err: error }, "Failed to send password reset email");
       Sentry.captureException(error);
     }
   }
@@ -300,7 +301,7 @@ export const resendVerificationEmail = async (req: Request, res: Response) => {
     try {
       await sendVerificationEmail(professional.email, rawToken);
     } catch (error) {
-      console.error("Failed to send verification email:", error);
+      logger.error({ err: error }, "Failed to send verification email");
       Sentry.captureException(error);
     }
   }

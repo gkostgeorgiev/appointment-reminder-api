@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/node";
 import { NextFunction, Request, Response } from "express";
 import { MongoServerError } from "mongodb";
+import { logger } from "../config/logger.js";
 
 export const errorHandler = (
   err: any,
@@ -8,8 +9,6 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ) => {
-  console.error(err);
-
   let statusCode = err.statusCode || 500;
   let message = err.message || "Server Error";
 
@@ -33,8 +32,13 @@ export const errorHandler = (
       .join(", ");
   }
 
+  // Log-level parity with the >= 500 threshold already used for Sentry
+  // reporting below, rather than logging every error at the same severity.
   if (statusCode >= 500) {
+    logger.error({ requestId: req.requestId, err }, "request error");
     Sentry.captureException(err);
+  } else {
+    logger.warn({ requestId: req.requestId, err }, "request error");
   }
 
   res.status(statusCode).json({

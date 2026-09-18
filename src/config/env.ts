@@ -42,6 +42,9 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
+  // Deliberately console.error, not the structured logger (src/config/logger.ts):
+  // the logger needs env.NODE_ENV to configure itself, so it can't be used
+  // before env parsing has actually succeeded without creating a cycle.
   console.error("Invalid environment configuration:");
   for (const issue of parsed.error.issues) {
     console.error(`  - ${issue.path.join(".")}: ${issue.message}`);

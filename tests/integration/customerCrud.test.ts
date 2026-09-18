@@ -68,4 +68,58 @@ describe("GET /customers/:id", () => {
 
     expect(getRes.status).toBe(400);
   });
+
+  it("finds a customer by a local-format phone search term against a normalized stored phone", async () => {
+    const pro = await registerAndLogin(app, "getcust4@example.com");
+
+    const createRes = await pro.authed
+      .post("/api/v1/customers")
+      .send({ firstName: "Elena", lastName: "Petrova", phone: "0888300004" });
+    expect(createRes.body.data.phone).toBe("359888300004");
+
+    const searchRes = await pro.authed.get(
+      "/api/v1/customers?phone=0888300004",
+    );
+
+    expect(searchRes.status).toBe(200);
+    expect(
+      searchRes.body.data.items.some(
+        (c: { phone: string }) => c.phone === "359888300004",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("PATCH /customers/:id", () => {
+  it("normalizes a local-format phone on update", async () => {
+    const pro = await registerAndLogin(app, "patchcust1@example.com");
+
+    const createRes = await pro.authed
+      .post("/api/v1/customers")
+      .send({ firstName: "Ivan", lastName: "Dimitrov", phone: "359888300010" });
+    const customerId = createRes.body.data._id;
+
+    const patchRes = await pro.authed
+      .patch(`/api/v1/customers/${customerId}`)
+      .send({ phone: "0888300011" });
+
+    expect(patchRes.status).toBe(200);
+    expect(patchRes.body.data.phone).toBe("359888300011");
+  });
+
+  it("leaves an already-international phone unchanged on update", async () => {
+    const pro = await registerAndLogin(app, "patchcust2@example.com");
+
+    const createRes = await pro.authed
+      .post("/api/v1/customers")
+      .send({ firstName: "Petar", lastName: "Georgiev", phone: "359888300020" });
+    const customerId = createRes.body.data._id;
+
+    const patchRes = await pro.authed
+      .patch(`/api/v1/customers/${customerId}`)
+      .send({ phone: "359888300021" });
+
+    expect(patchRes.status).toBe(200);
+    expect(patchRes.body.data.phone).toBe("359888300021");
+  });
 });
