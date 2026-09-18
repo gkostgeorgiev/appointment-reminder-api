@@ -1,0 +1,6 @@
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "gitleaks not found on PATH — install it (see SECRETS.md) to enable the pre-commit secret scan. Skipping for now."
+  exit 0
+fi
+
+gitleaks protect --staged --no-banner

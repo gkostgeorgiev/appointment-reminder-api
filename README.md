@@ -644,11 +644,9 @@ yarn dev
 
 # Production Deployment
 
-Typical infrastructure:
+Supported target: Render (API) + MongoDB Atlas (database) + Twilio (SMS) + Resend (email).
 
-API → Render / Railway / Fly.io
-Database → MongoDB Atlas
-SMS → Twilio
+See [RUNBOOK.md](RUNBOOK.md) for the full deployment/operations runbook (build & start commands, health checks, backup/restore, index rollout, alerting, rollback, and the single-reminder-worker requirement) and [SECRETS.md](SECRETS.md) for secret storage, rotation, and scanning.
 
 Recommended environments:
 
@@ -680,7 +678,6 @@ Still open before a production deployment (tracked as issues, not exhaustively l
 
 * Structured, PII-safe production logging (currently `console.log`/`console.error`)
 * Timeouts on HTTP/MongoDB/Twilio/Resend operations
-* A documented deployment/operations runbook and a formal secret-management process
 * Enforcing (not just documenting) the single-reminder-worker deployment invariant
 * Rate-limiting the refresh-token endpoint
 * Verify a real sending domain in Resend and update `EMAIL_FROM` to an address on it — password reset/verification emails currently only deliver to the Resend account owner's own email address (sandbox sender `onboarding@resend.dev`), which is fine for MVP development but won't reach real users in production.

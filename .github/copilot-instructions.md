@@ -1,8 +1,6 @@
-# CLAUDE.md
+# GitHub Copilot instructions
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-**Keep in sync:** `AGENTS.md` and `.github/copilot-instructions.md` mirror this file's content for other AI coding agents (OpenAI Codex, GitHub Copilot). Any edit to this file must be applied to both of those files in the same change.
+This file provides guidance to GitHub Copilot when working with code in this repository. It mirrors `CLAUDE.md`, the canonical instructions file for Claude Code — both are kept in sync; if you're reading this because `CLAUDE.md` just changed, check `AGENTS.md` too.
 
 ## Commands
 
