@@ -26,6 +26,9 @@ jobs:
       - name: Build
         run: yarn build
 
+      - name: Swagger spec smoke test
+        run: node scripts/check-swagger-dist.mjs
+
       - name: Test
         run: yarn test
 

@@ -48,6 +48,9 @@ const server =
         .listen(PORT, onListen)
     : app.listen(PORT, onListen);
 
+// Bounds how long we'll wait to receive a full request (default is 300s).
+server.requestTimeout = 30_000;
+
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
 const shutdown = (signal: string) => {

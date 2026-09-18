@@ -1,7 +1,11 @@
 import twilio from "twilio";
 import { env } from "../config/env.js";
 
-const client = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
+// The Twilio SDK only exposes a request timeout at client-construction time,
+// not per-call - this bounds every request this client makes.
+const client = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN, {
+  timeout: 15_000,
+});
 
 export const sendSms = async (
   to: string,

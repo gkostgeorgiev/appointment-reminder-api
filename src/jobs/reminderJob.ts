@@ -33,7 +33,9 @@ export const runReminderTick = async () => {
         { reminderNextAttemptAt: null },
         { reminderNextAttemptAt: { $lte: now } },
       ],
-    }).populate("customer", "firstName lastName phone");
+    })
+      .maxTimeMS(10_000)
+      .populate("customer", "firstName lastName phone");
   } catch (error) {
     logger.error({ err: error }, "Reminder job tick failed");
     Sentry.captureException(error);

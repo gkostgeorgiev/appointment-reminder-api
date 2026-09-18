@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon --watch src --signal SIGTERM --exec tsx src/server.ts",
-    "kill": "node scripts/kill-node.js",
+    "kill": "tsx scripts/kill-node.ts",
     "prepare": "husky",
     "start": "node dist/server.js",
     "test": "vitest run"

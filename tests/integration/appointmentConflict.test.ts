@@ -141,6 +141,32 @@ describe("appointment conflict detection", () => {
     expect(listRes.body.data.items).toHaveLength(1);
   });
 
+  it("lets two truly concurrent non-overlapping creates both succeed", async () => {
+    const pro = await registerAndLogin(app, "conflict6@example.com");
+    const customerId = await createCustomer(pro.authed, "359888100007");
+
+    const baseStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // Two hours apart, both 30-minute slots - genuinely non-overlapping, so
+    // the shared per-professional AppointmentLock (which serializes these
+    // two transactions against each other) must not spuriously reject one
+    // just because they raced.
+    const laterStart = new Date(baseStart.getTime() + 2 * 60 * 60 * 1000);
+
+    const [first, second] = await Promise.all([
+      pro.authed
+        .post("/api/v1/appointments")
+        .send({ customer: customerId, start: baseStart.toISOString(), duration: 30 }),
+      pro.authed
+        .post("/api/v1/appointments")
+        .send({ customer: customerId, start: laterStart.toISOString(), duration: 30 }),
+    ]);
+
+    expect([first.status, second.status].sort()).toEqual([201, 201]);
+
+    const listRes = await pro.authed.get("/api/v1/appointments");
+    expect(listRes.body.data.items).toHaveLength(2);
+  });
+
   it("does not consider appointments under a different professional as conflicting", async () => {
     const proA = await registerAndLogin(app, "conflict4a@example.com");
     const proB = await registerAndLogin(app, "conflict4b@example.com");

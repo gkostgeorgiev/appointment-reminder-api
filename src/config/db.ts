@@ -20,7 +20,10 @@ const getDbStatus = () => {
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(env.MONGO_URI);
+    await mongoose.connect(env.MONGO_URI, {
+      serverSelectionTimeoutMS: 10_000,
+      socketTimeoutMS: 45_000,
+    });
     logger.info("MongoDB Connected");
   } catch (error) {
     logger.error({ err: error }, "Database connection failed");

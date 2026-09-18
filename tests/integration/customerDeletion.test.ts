@@ -92,4 +92,42 @@ describe("customer deletion policy", () => {
     const deleteRes = await pro.authed.delete(`/api/v1/customers/${customerId}`);
     expect(deleteRes.status).toBe(204);
   });
+
+  it("allows deleting a customer once their appointment is completed", async () => {
+    const pro = await registerAndLogin(app, "delcust4@example.com");
+    const customerId = await createCustomer(pro.authed, "359888200004");
+
+    const start = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const apptRes = await pro.authed
+      .post("/api/v1/appointments")
+      .send({ customer: customerId, start, duration: 30 });
+    const appointmentId = apptRes.body.data._id;
+
+    const completeRes = await pro.authed
+      .patch(`/api/v1/appointments/${appointmentId}`)
+      .send({ status: "completed" });
+    expect(completeRes.status).toBe(200);
+
+    const deleteRes = await pro.authed.delete(`/api/v1/customers/${customerId}`);
+    expect(deleteRes.status).toBe(204);
+  });
+
+  it("allows deleting a customer once their appointment is marked no-show", async () => {
+    const pro = await registerAndLogin(app, "delcust5@example.com");
+    const customerId = await createCustomer(pro.authed, "359888200005");
+
+    const start = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const apptRes = await pro.authed
+      .post("/api/v1/appointments")
+      .send({ customer: customerId, start, duration: 30 });
+    const appointmentId = apptRes.body.data._id;
+
+    const noShowRes = await pro.authed
+      .patch(`/api/v1/appointments/${appointmentId}`)
+      .send({ status: "no-show" });
+    expect(noShowRes.status).toBe(200);
+
+    const deleteRes = await pro.authed.delete(`/api/v1/customers/${customerId}`);
+    expect(deleteRes.status).toBe(204);
+  });
 });
