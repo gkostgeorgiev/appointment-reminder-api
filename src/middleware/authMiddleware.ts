@@ -38,8 +38,8 @@ export const authMiddleware = async (
 
     if (
       professional.passwordChangedAt &&
-      typeof decoded.iat === "number" &&
-      decoded.iat * 1000 < professional.passwordChangedAt.getTime()
+      typeof decoded.iatMs === "number" &&
+      decoded.iatMs < professional.passwordChangedAt.getTime()
     ) {
       return res.status(401).json({ message: "Invalid or expired token" });
     }

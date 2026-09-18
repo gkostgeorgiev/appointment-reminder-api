@@ -120,4 +120,46 @@ describe("auth + CSRF flow", () => {
 
     expect(res.status).toBe(401);
   });
+
+  it("does not reject a token issued later in the same wall-clock second as a password change (issue #11)", async () => {
+    const pro = await registerAndLogin(app, "csrf7@example.com");
+
+    const jwt = await import("jsonwebtoken");
+    const { env } = await import("../../src/config/env.js");
+    const { Professional } = await import("../../src/models/Professional.js");
+
+    // Both timestamps land in the same integer second, with the password
+    // change first (ms 200) and the token issued after it (ms 700). A naive
+    // `iat`-based check floors the token's issue time down to the start of
+    // that second (ms 0), which lands *before* passwordChangedAt and would
+    // wrongly reject a token that was genuinely issued after the change -
+    // exactly the false positive issue #11 describes. The `iatMs` claim
+    // preserves millisecond precision so this comparison is correct instead.
+    const secondStart = Math.floor(Date.now() / 1000) * 1000;
+    const passwordChangedAtMs = secondStart + 200;
+    const iatMs = secondStart + 700;
+
+    const professional = await Professional.findOne({ email: "csrf7@example.com" });
+    await Professional.updateOne(
+      { email: "csrf7@example.com" },
+      { $set: { passwordChangedAt: new Date(passwordChangedAtMs) } },
+    );
+
+    const token = jwt.default.sign(
+      {
+        userId: professional!.id,
+        email: professional!.email,
+        iatMs,
+        iat: Math.floor(iatMs / 1000),
+      },
+      env.JWT_SECRET,
+      { expiresIn: "1h" },
+    );
+
+    const res = await request(app)
+      .get("/api/v1/customers")
+      .set("Cookie", [`token=${token}`, `csrfToken=${pro.csrfToken}`].join("; "));
+
+    expect(res.status).toBe(200);
+  });
 });

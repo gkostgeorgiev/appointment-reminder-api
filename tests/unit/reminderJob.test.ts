@@ -27,6 +27,9 @@ let Appointment: any;
 let Customer: any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Professional: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let ReminderWorkerLock: any;
+let REMINDER_WORKER_LOCK_ID: string;
 let sendSmsMock: ReturnType<typeof vi.fn>;
 let sentry: { captureException: ReturnType<typeof vi.fn>; captureMessage: ReturnType<typeof vi.fn> };
 
@@ -38,6 +41,9 @@ beforeAll(async () => {
   ({ Appointment } = await import("../../src/models/Appointment.js"));
   ({ Customer } = await import("../../src/models/Customer.js"));
   ({ Professional } = await import("../../src/models/Professional.js"));
+  ({ ReminderWorkerLock, REMINDER_WORKER_LOCK_ID } = await import(
+    "../../src/models/ReminderWorkerLock.js"
+  ));
   ({ sendSms: sendSmsMock } = await import("../../src/services/smsService.js"));
   sentry = await import("@sentry/node");
 });
@@ -202,5 +208,40 @@ describe("reminder job retry/backoff", () => {
     const reloaded = await Appointment.findById(appointment._id);
     expect(reloaded.reminderSent).toBe(true);
     expect(reloaded.reminderClaimedUntil).toBeNull();
+  });
+
+  it("skips the tick entirely while another instance holds the leadership lease (issue #23)", async () => {
+    sendSmsMock.mockResolvedValue(undefined);
+    await createDueAppointment();
+
+    await ReminderWorkerLock.create({
+      _id: REMINDER_WORKER_LOCK_ID,
+      holder: "some-other-instance",
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    await runReminderTick();
+
+    expect(sendSmsMock).not.toHaveBeenCalled();
+  });
+
+  it("takes over leadership once the previous holder's lease has expired", async () => {
+    sendSmsMock.mockResolvedValue(undefined);
+    const appointment = await createDueAppointment();
+
+    await ReminderWorkerLock.create({
+      _id: REMINDER_WORKER_LOCK_ID,
+      holder: "some-other-instance",
+      expiresAt: new Date(Date.now() - 1000),
+    });
+
+    await runReminderTick();
+
+    expect(sendSmsMock).toHaveBeenCalledTimes(1);
+    const reloaded = await Appointment.findById(appointment._id);
+    expect(reloaded.reminderSent).toBe(true);
+
+    const lock = await ReminderWorkerLock.findById(REMINDER_WORKER_LOCK_ID);
+    expect(lock.holder).not.toBe("some-other-instance");
   });
 });

@@ -31,20 +31,6 @@ export const registerAndLogin = async (app: Express, email: string) => {
     .post("/api/v1/professionals/verify-email")
     .send({ token: verificationToken });
 
-  // authMiddleware rejects a token whose (second-truncated) `iat` is earlier
-  // than passwordChangedAt (millisecond precision) - registration's own
-  // password-hashing hook sets passwordChangedAt at account creation, so
-  // logging in immediately after (as tests do) can land in the same
-  // wall-clock second and trip a false positive. Nudge it a few seconds into
-  // the past, which is also just realistically how this flow plays out
-  // outside a test (register -> verify email -> log in, never within the
-  // same second).
-  const { Professional } = await import("../../src/models/Professional.js");
-  await Professional.updateOne(
-    { email },
-    { $set: { passwordChangedAt: new Date(Date.now() - 5000) } },
-  );
-
   const loginRes = await request(app)
     .post("/api/v1/professionals/login")
     .send({ email, password: TEST_PASSWORD });
