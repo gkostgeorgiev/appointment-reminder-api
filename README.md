@@ -1,7 +1,7 @@
 # Appointment Reminder API
 
 ![Node.js](https://img.shields.io/badge/node.js-20.x-green)
-![TypeScript](https://img.shields.io/badge/typescript-5.x-blue)
+![TypeScript](https://img.shields.io/badge/typescript-7.x-blue)
 ![Express](https://img.shields.io/badge/express-4.x-lightgrey)
 ![MongoDB](https://img.shields.io/badge/mongodb-atlas-green)
 ![OpenAPI](https://img.shields.io/badge/openapi-swagger-green)
