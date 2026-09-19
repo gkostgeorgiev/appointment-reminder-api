@@ -4,3 +4,4 @@ dist
 certs
 settings.local.json
 package-lock.json
+.local/

@@ -672,15 +672,14 @@ Implemented:
 * Security middleware
 * Health endpoint
 
-As of 2026-09-16, the concurrency/correctness issues found in review are fixed: atomic refresh-token rotation and single-use password-reset/email-verification tokens, transaction-guarded booking to prevent double-booked slots, an enforced customer-deletion policy, reliable (Sentry-reported) email delivery failures, and an atomic per-appointment claim to prevent duplicate reminder SMS sends.
+As of 2026-09-18, the concurrency/correctness issues found in review are fixed: atomic refresh-token rotation and single-use password-reset/email-verification tokens, transaction-guarded booking to prevent double-booked slots, an enforced customer-deletion policy, reliable (Sentry-reported) email delivery failures, and an atomic per-appointment claim to prevent duplicate reminder SMS sends. Structured PII-safe logging, bounded timeouts on every network call, a code-level leader-election guard for the reminder worker, and rate-limiting on the refresh endpoint have also since shipped.
 
 Still open before a production deployment (tracked as issues, not exhaustively listed here):
 
-* Structured, PII-safe production logging (currently `console.log`/`console.error`)
-* Timeouts on HTTP/MongoDB/Twilio/Resend operations
-* Enforcing (not just documenting) the single-reminder-worker deployment invariant
-* Rate-limiting the refresh-token endpoint
 * Verify a real sending domain in Resend and update `EMAIL_FROM` to an address on it — password reset/verification emails currently only deliver to the Resend account owner's own email address (sandbox sender `onboarding@resend.dev`), which is fine for MVP development but won't reach real users in production.
+* A live Twilio number/account for production SMS sending (currently using a trial/dev setup).
+
+Parked, no near-term driver (see the issue tracker for details — dependency major-version bumps with no security driver, and a possible future move to a queue-based reminder architecture if usage grows past what polling comfortably handles).
 
 Next step:
 
