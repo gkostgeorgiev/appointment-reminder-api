@@ -152,7 +152,7 @@ export const updateCustomer = async (req: Request, res: Response) => {
       professional: req.user!.userId,
     },
     updateData,
-    { new: true, runValidators: true },
+    { returnDocument: "after", runValidators: true },
   );
 
   if (!updatedCustomer) {

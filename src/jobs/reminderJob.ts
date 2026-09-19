@@ -40,7 +40,7 @@ const tryAcquireLeadership = async (now: Date): Promise<boolean> => {
           expiresAt: new Date(now.getTime() + LEADER_LEASE_TTL_MS),
         },
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
 
     return lock.holder === WORKER_ID;
