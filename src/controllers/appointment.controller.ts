@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import mongoose, { ClientSession, FilterQuery } from "mongoose";
+import mongoose, { ClientSession, QueryFilter } from "mongoose";
 import z from "zod";
 import { Appointment, IAppointment } from "../models/Appointment.js";
 import { AppointmentLock } from "../models/AppointmentLock.js";
@@ -116,7 +116,7 @@ export const getAppointments = async (req: Request, res: Response) => {
   const limitNum = limit ?? 100;
   const skip = (pageNum - 1) * limitNum;
 
-  const filter: FilterQuery<IAppointment> = {
+  const filter: QueryFilter<IAppointment> = {
     professional: req.user!.userId,
   };
 
@@ -146,15 +146,17 @@ export const getAppointments = async (req: Request, res: Response) => {
       $lte: endOfDay,
     };
   } else if (from || to) {
-    filter.start = {} as FilterQuery<IAppointment>["start"];
+    const startRange: { $gte?: Date; $lte?: Date } = {};
 
     if (from) {
-      filter.start.$gte = getStartOfDay(new Date(from));
+      startRange.$gte = getStartOfDay(new Date(from));
     }
 
     if (to) {
-      filter.start.$lte = getEndOfDay(new Date(to));
+      startRange.$lte = getEndOfDay(new Date(to));
     }
+
+    filter.start = startRange as QueryFilter<IAppointment>["start"];
   } else if (!customer) {
     // No filter at all: default to a rolling window instead of full history.
     const now = new Date();
@@ -288,7 +290,7 @@ export const hasAppointmentConflict = async (
 ) => {
   const end = getAppointmentEnd(start, duration);
 
-  const query: FilterQuery<IAppointment> & { $expr?: any } = {
+  const query: QueryFilter<IAppointment> & { $expr?: any } = {
     professional: professionalId,
     start: { $lt: end },
     $expr: {
