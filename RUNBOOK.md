@@ -15,7 +15,7 @@ See [SECRETS.md](SECRETS.md) for how production credentials are stored, rotated,
 
 Render terminates TLS in front of the app and proxies requests, which is why `src/app.ts` sets `app.set("trust proxy", 1)` — this is Render-specific and would need revisiting under a different host.
 
-Recommended environments: development, staging, production — each as a separate Render service and Atlas project/cluster, with its own secrets (see SECRETS.md).
+Environments: local development (`yarn dev`) and CI (GitHub Actions, ephemeral in-memory MongoDB via `mongodb-memory-server`) cover pre-merge testing; production is the single Render service + Atlas cluster described below. No separate staging/UAT environment — solo-dev project, no other testers, so a persistent pre-prod environment would be maintenance overhead (secrets, env vars, another cluster) without a corresponding benefit.
 
 ---
 
