@@ -6,9 +6,12 @@ import {
   afterAll,
   afterEach,
   vi,
+  type MockedFunction,
 } from "vitest";
 import type { MongoMemoryReplSet } from "mongodb-memory-server";
 import { setupTestApp, teardownTestApp, clearDatabase } from "../helpers/setup.js";
+import type { sendSms } from "../../src/services/smsService.js";
+import type * as SentryNode from "@sentry/node";
 
 vi.mock("../../src/services/smsService.js", () => ({
   sendSms: vi.fn(),
@@ -30,8 +33,18 @@ let Professional: any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let ReminderWorkerLock: any;
 let REMINDER_WORKER_LOCK_ID: string;
-let sendSmsMock: ReturnType<typeof vi.fn>;
-let sentry: { captureException: ReturnType<typeof vi.fn>; captureMessage: ReturnType<typeof vi.fn> };
+let sendSmsMock: MockedFunction<typeof sendSms>;
+let sentry: {
+  captureException: MockedFunction<typeof SentryNode.captureException>;
+  captureMessage: MockedFunction<typeof SentryNode.captureMessage>;
+};
+
+// The reminder job only awaits sendSms for its side effect and discards the
+// resolved Twilio MessageInstance, so tests don't need a real one - this
+// satisfies mockResolvedValue's typing without pulling in Twilio's type.
+const FAKE_SEND_SMS_RESULT = undefined as unknown as Awaited<
+  ReturnType<typeof sendSms>
+>;
 
 beforeAll(async () => {
   ({ mongod } = await setupTestApp());
@@ -44,8 +57,14 @@ beforeAll(async () => {
   ({ ReminderWorkerLock, REMINDER_WORKER_LOCK_ID } = await import(
     "../../src/models/ReminderWorkerLock.js"
   ));
-  ({ sendSms: sendSmsMock } = await import("../../src/services/smsService.js"));
-  sentry = await import("@sentry/node");
+  sendSmsMock = vi.mocked(
+    (await import("../../src/services/smsService.js")).sendSms,
+  );
+  const sentryModule = await import("@sentry/node");
+  sentry = {
+    captureException: vi.mocked(sentryModule.captureException),
+    captureMessage: vi.mocked(sentryModule.captureMessage),
+  };
 });
 
 afterEach(async () => {
@@ -89,7 +108,7 @@ const createDueAppointment = async () => {
 
 describe("reminder job retry/backoff", () => {
   it("sends the reminder and flips reminderSent on success", async () => {
-    sendSmsMock.mockResolvedValue(undefined);
+    sendSmsMock.mockResolvedValue(FAKE_SEND_SMS_RESULT);
     const appointment = await createDueAppointment();
 
     await runReminderTick();
@@ -166,7 +185,7 @@ describe("reminder job retry/backoff", () => {
   });
 
   it("never double-sends across sequential ticks (the reminderSent guard) - this is how node-cron actually invokes it: one tick always finishes before the next fires, never overlapping", async () => {
-    sendSmsMock.mockResolvedValue(undefined);
+    sendSmsMock.mockResolvedValue(FAKE_SEND_SMS_RESULT);
     await createDueAppointment();
 
     await runReminderTick();
@@ -190,7 +209,7 @@ describe("reminder job retry/backoff", () => {
   });
 
   it("lets a later tick reclaim an appointment once its claim lease has expired", async () => {
-    sendSmsMock.mockResolvedValue(undefined);
+    sendSmsMock.mockResolvedValue(FAKE_SEND_SMS_RESULT);
     const appointment = await createDueAppointment();
 
     // Simulate a previous tick that claimed this appointment and then
@@ -211,7 +230,7 @@ describe("reminder job retry/backoff", () => {
   });
 
   it("skips the tick entirely while another instance holds the leadership lease (issue #23)", async () => {
-    sendSmsMock.mockResolvedValue(undefined);
+    sendSmsMock.mockResolvedValue(FAKE_SEND_SMS_RESULT);
     await createDueAppointment();
 
     await ReminderWorkerLock.create({
@@ -226,7 +245,7 @@ describe("reminder job retry/backoff", () => {
   });
 
   it("takes over leadership once the previous holder's lease has expired", async () => {
-    sendSmsMock.mockResolvedValue(undefined);
+    sendSmsMock.mockResolvedValue(FAKE_SEND_SMS_RESULT);
     const appointment = await createDueAppointment();
 
     await ReminderWorkerLock.create({
