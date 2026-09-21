@@ -658,7 +658,7 @@ Recommended environments:
 
 # Project Status
 
-MVP feature set implemented. This is **staging-ready, not a verified production deployment** — see the repo's issue tracker for the current, up-to-date list of release gates before going live; the summary below will drift out of date as issues close.
+MVP feature set implemented and the backend is **deployed and confirmed live in production** (Render + Atlas + Twilio + Resend + custom domain, backed up daily). There's no frontend yet, so there's no way for a real user to actually use the product — see "Next step" below. See the repo's issue tracker for any open items; the summary below will drift out of date as issues close.
 
 Implemented:
 
@@ -671,16 +671,14 @@ Implemented:
 * Cron worker
 * Security middleware
 * Health endpoint
+* Automated daily database backups (GitHub Actions + Backblaze B2, 30-day retention — see `RUNBOOK.md`)
 
 As of 2026-09-18, the concurrency/correctness issues found in review are fixed: atomic refresh-token rotation and single-use password-reset/email-verification tokens, transaction-guarded booking to prevent double-booked slots, an enforced customer-deletion policy, reliable (Sentry-reported) email delivery failures, and an atomic per-appointment claim to prevent duplicate reminder SMS sends. Structured PII-safe logging, bounded timeouts on every network call, a code-level leader-election guard for the reminder worker, and rate-limiting on the refresh endpoint have also since shipped.
 
-Still open before a production deployment (tracked as issues, not exhaustively listed here):
-
-* Verify a real sending domain in Resend and update `EMAIL_FROM` to an address on it — password reset/verification emails currently only deliver to the Resend account owner's own email address (sandbox sender `onboarding@resend.dev`), which is fine for MVP development but won't reach real users in production.
-* A live Twilio number/account for production SMS sending (currently using a trial/dev setup).
+As of 2026-09-20/21, the backend side of going live is done: a verified sending domain in Resend (`napomnyane.eu`, `EMAIL_FROM` cut over), a paid Twilio account with a production number, Render's Starter (always-on) tier, the `api.napomnyane.eu` custom domain, and automated backups (above) are all live and confirmed working against production, not just configured.
 
 Parked, no near-term driver (see the issue tracker for details — dependency major-version bumps with no security driver, and a possible future move to a queue-based reminder architecture if usage grows past what polling comfortably handles).
 
 Next step:
 
-Frontend dashboard.
+Frontend dashboard — the backend is deployed and production-configured, but there's no way for a real user to use the product until this exists.
