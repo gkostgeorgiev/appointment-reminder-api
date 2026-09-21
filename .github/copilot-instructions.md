@@ -111,6 +111,8 @@ The refresh token is invalidated in two places: `POST /professionals/logout` (au
 
 Because `SameSite=None` cookies require HTTPS, `npm run dev` looks for a locally-trusted cert/key at `certs/dev-cert.pem` / `certs/dev-key.pem` (gitignored) and serves over `https` when both are present (generate them with [`mkcert`](https://github.com/FiloSottile/mkcert) for `localhost`); otherwise it falls back to plain `http`. Production runs behind Render's proxy, which terminates TLS in front of the app (hence `trust proxy` in `src/app.ts`), so `app.listen` stays plain there.
 
+`Professional.timezone` defaults to `"Europe/Sofia"` (hardcoded in `src/models/Professional.ts`, not detected or client-supplied) since every professional using this product operates in Bulgaria today. Nothing currently reads this field — the UTC day-boundary behaviour described under Date filtering is unchanged; revisit with real per-account detection (and a move to server-side local-day boundaries) if that Bulgaria-only assumption stops holding.
+
 ### Mounting / routing gotcha
 
 `src/app.ts` mounts the API under `/api/${API_VERSION}` where `API_VERSION = "v1"`, i.e. **`/api/v1/...`** — note this differs from the paths shown in `README.md` (which document plain `/api/...`). `dev.routes.ts` is mounted at `/api/dev` (unversioned, and only when `NODE_ENV === "development"`) with an unauthenticated Twilio smoke-test endpoint.

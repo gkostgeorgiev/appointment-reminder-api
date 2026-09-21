@@ -262,6 +262,8 @@ For a Bulgarian audience (UTC+2 winter, UTC+3 summer), `range=today` between mid
 
 **Recommendation:** have the frontend compute local day boundaries itself and send them as an explicit `from`/`to` range rather than using `range=today`. Use `range` only where "approximately this period" is good enough. Note `from`/`to` are date-only and still snap to UTC day boundaries, so a local-midnight-accurate calendar view will need the backend to accept datetimes or a timezone — flag it if the product needs exactness.
 
+Every account is hardcoded to `Europe/Sofia` server-side (`Professional.timezone`, not currently exposed via the API) since every professional using this product operates in Bulgaria today — there's no per-account detection to wire up on the frontend.
+
 ---
 
 ## 7. Errors and rate limits

@@ -5,6 +5,7 @@ export interface IProfessional extends Document {
   email: string;
   password: string;
   profession: string;
+  timezone: string;
   passwordChangedAt?: Date;
   passwordResetTokenHash?: string | null;
   passwordResetTokenExpires?: Date | null;
@@ -36,6 +37,13 @@ const professionalSchema = new Schema<IProfessional>(
       type: String,
       required: true,
       default: "professional",
+    },
+    // Hardcoded rather than detected: every professional using this product
+    // operates in Bulgaria today, so there's no per-account signal worth
+    // collecting yet. Revisit if that stops being true.
+    timezone: {
+      type: String,
+      default: "Europe/Sofia",
     },
     passwordChangedAt: {
       type: Date,
