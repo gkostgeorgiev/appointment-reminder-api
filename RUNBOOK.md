@@ -69,6 +69,8 @@ Also point an external uptime monitor (e.g. UptimeRobot, Better Uptime) at `/hea
   mongorestore --uri="$MONGO_URI" --archive=backup-<date>.gz --gzip
   ```
 
+  **Without `--drop`, `mongorestore` will not overwrite a document whose `_id` already exists in the target collection** — it silently reports it as a failure (`E11000 duplicate key error`) and moves on, rather than erroring out or halting. The command still exits cleanly and looks like it succeeded unless you actually read the final `X document(s) restored successfully, Y document(s) failed to restore` line. This matters for a real incident: restoring into a database that's only partially damaged (not empty) will silently skip every document that survived, giving false confidence that a full restore happened. Add `--drop` (drops each collection before restoring into it) if the intent is a full replace rather than a fill-in, and always check that final restored/failed count rather than just the exit code — confirmed by an actual test restore against prod data on 2026-09-21, which silently skipped every document for exactly this reason.
+
   Given this DB holds patient-adjacent PII (customer name/phone/email — see `sentry.ts`'s scrubbing), don't skip this just because M0 makes it manual to set up.
 
 ---
