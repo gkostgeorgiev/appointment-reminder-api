@@ -19,16 +19,10 @@ jobs:
     steps:
       - name: Install MongoDB Database Tools
         run: |
-          CODENAME=$(lsb_release -cs)
-          case "$CODENAME" in
-            jammy) MDB_UBUNTU=ubuntu2204 ;;
-            noble) MDB_UBUNTU=ubuntu2404 ;;
-            focal) MDB_UBUNTU=ubuntu2004 ;;
-            *) echo "Unsupported Ubuntu codename: $CODENAME" >&2; exit 1 ;;
-          esac
-          VERSION=$(curl -fsSL https://api.github.com/repos/mongodb/mongo-tools/releases/latest | grep -m1 '"tag_name"' | cut -d '"' -f4)
-          curl -fsSL "https://fastdl.mongodb.org/tools/db/mongodb-database-tools-${MDB_UBUNTU}-x86_64-${VERSION}.deb" -o mongodb-database-tools.deb
-          sudo apt-get install -y ./mongodb-database-tools.deb
+          curl -fsSL https://pgp.mongodb.com/server-8.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-server-8.0.gpg
+          echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-database-tools
 
       - name: Dump database
         env:
