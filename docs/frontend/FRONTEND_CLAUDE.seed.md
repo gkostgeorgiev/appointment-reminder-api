@@ -99,9 +99,6 @@ Do not paper over these — they are tracked as backend work. See `API_GUIDE.md`
 - No change-password-while-authenticated endpoint. A logged-in user can only
   change their password via the emailed forgot-password flow.
 - No manual trigger/cancel/resend for reminders.
-- Cancelled appointments still block their time slot for conflict detection.
-  This is a known backend bug under review — cancelling does **not** free the
-  slot for rebooking, so don't build UI that promises it does.
 - Date filters are date-only and UTC-anchored, so a local-timezone "today"
   cannot be expressed exactly. Compute local day boundaries client-side and
   send `from`/`to` rather than using `range=today`.

@@ -167,6 +167,78 @@ describe("appointment conflict detection", () => {
     expect(listRes.body.data.items).toHaveLength(2);
   });
 
+  it("allows booking a slot held only by a cancelled appointment", async () => {
+    const pro = await registerAndLogin(app, "conflict7@example.com");
+    const customerId = await createCustomer(pro.authed, "359888100008");
+
+    const baseStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const first = await pro.authed
+      .post("/api/v1/appointments")
+      .send({ customer: customerId, start: baseStart.toISOString(), duration: 30 });
+    expect(first.status).toBe(201);
+    const firstId = first.body.data._id;
+
+    const cancelled = await pro.authed
+      .patch(`/api/v1/appointments/${firstId}`)
+      .send({ status: "cancelled" });
+    expect(cancelled.status).toBe(200);
+
+    // Same slot, now only occupied by a cancelled appointment -> should succeed
+    const second = await pro.authed
+      .post("/api/v1/appointments")
+      .send({ customer: customerId, start: baseStart.toISOString(), duration: 30 });
+    expect(second.status).toBe(201);
+  });
+
+  it("still rejects a slot held by a scheduled appointment (regression guard)", async () => {
+    const pro = await registerAndLogin(app, "conflict8@example.com");
+    const customerId = await createCustomer(pro.authed, "359888100009");
+
+    const baseStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const first = await pro.authed
+      .post("/api/v1/appointments")
+      .send({ customer: customerId, start: baseStart.toISOString(), duration: 30 });
+    expect(first.status).toBe(201);
+
+    const overlapStart = new Date(baseStart.getTime() + 15 * 60 * 1000);
+    const second = await pro.authed
+      .post("/api/v1/appointments")
+      .send({ customer: customerId, start: overlapStart.toISOString(), duration: 30 });
+    expect(second.status).toBe(409);
+  });
+
+  it("rejects reactivating a cancelled appointment back to scheduled if its slot was rebooked meanwhile", async () => {
+    const pro = await registerAndLogin(app, "conflict9@example.com");
+    const customerId = await createCustomer(pro.authed, "359888100010");
+
+    const baseStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const first = await pro.authed
+      .post("/api/v1/appointments")
+      .send({ customer: customerId, start: baseStart.toISOString(), duration: 30 });
+    expect(first.status).toBe(201);
+    const firstId = first.body.data._id;
+
+    const cancelled = await pro.authed
+      .patch(`/api/v1/appointments/${firstId}`)
+      .send({ status: "cancelled" });
+    expect(cancelled.status).toBe(200);
+
+    // Slot is free now, so a different appointment rebooks it
+    const rebooked = await pro.authed
+      .post("/api/v1/appointments")
+      .send({ customer: customerId, start: baseStart.toISOString(), duration: 30 });
+    expect(rebooked.status).toBe(201);
+
+    // Reactivating the original cancelled appointment now conflicts with the rebooking
+    const reactivate = await pro.authed
+      .patch(`/api/v1/appointments/${firstId}`)
+      .send({ status: "scheduled" });
+    expect(reactivate.status).toBe(409);
+  });
+
   it("does not consider appointments under a different professional as conflicting", async () => {
     const proA = await registerAndLogin(app, "conflict4a@example.com");
     const proB = await registerAndLogin(app, "conflict4b@example.com");

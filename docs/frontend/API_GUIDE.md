@@ -210,13 +210,13 @@ Documents are serialized straight from Mongoose, so the id field is **`_id`**, n
 
 - `start` must be strictly in the future (`400` otherwise). Beware of the user filling a form slowly — validate near submit time, not just on field blur.
 - `customer` must be one of *your* customers, else `404 "Customer not found"`.
-- **Overlap is rejected:** `409 "Appointment overlaps with another booking"`, against any other appointment of yours **regardless of status**. The check is `existing.start < newEnd && existing.end > newStart`. Back-to-back appointments (one ending exactly when the next starts) are allowed.
+- **Overlap is rejected:** `409 "Appointment overlaps with another booking"`, against any other **`scheduled`** appointment of yours — `cancelled`/`completed`/`no-show` appointments don't occupy their slot. The check is `existing.start < newEnd && existing.end > newStart`. Back-to-back appointments (one ending exactly when the next starts) are allowed.
 
 **Update (`PATCH /appointments/:id`):**
 
 - At least one field required; the body is strict, and allowed keys are exactly `customer`, `start`, `duration`, `service`, `notes`, `status`.
-- The overlap check re-runs on any change, using the new `start`/`duration` where supplied and the existing values otherwise, excluding the appointment itself.
-- Setting `status` to `cancelled` does stop the reminder (the worker only sends for `scheduled`), but a cancelled appointment **still blocks its slot** for overlap purposes. If that's wrong for the product, it's a backend change — see §9.
+- The overlap check re-runs on any change, using the new `start`/`duration` where supplied and the existing values otherwise, excluding the appointment itself. This means reactivating a cancelled appointment back to `scheduled` conflicts if something else has since been booked into its old slot.
+- Setting `status` to `cancelled` does stop the reminder (the worker only sends for `scheduled`) **and** frees its slot for rebooking — the overlap check only considers `scheduled` appointments.
 
 **Reminders.** A reminder SMS fires roughly 24h before `start` (a worker polls every 5 minutes for `scheduled` appointments 23–25h out with `reminderSent: false`). The `reminder*` fields are readable and useful for a "reminder sent" indicator, but are **not writable** — there is no endpoint to trigger, cancel, or resend a reminder. Rescheduling an appointment further out does not reset `reminderSent` if one already went out.
 
@@ -354,7 +354,6 @@ The fix belongs on the backend:
 - **No change-password-while-authenticated endpoint.** A logged-in user who knows their current password still has to go out through the emailed forgot-password flow to change it. (The pre-login reset flow itself works fine — this is about the in-app one.)
 - **No account-deletion or data-export endpoint.**
 - **No way to trigger, cancel, or resend a reminder manually.**
-- **Cancelled appointments still occupy their slot** for conflict detection — treat as a backend bug under review, not as intended behaviour. Until it's fixed, cancelling an appointment does *not* free the time for rebooking; the UI should not promise that it does.
 - `GET /me` and the auth middleware's `401`/`403` bodies are not enveloped.
 - `DELETE` returns `204` with no body while other writes return the affected document.
 - Date filters are date-only and UTC-anchored, so a local-timezone day cannot be expressed exactly (see §6).

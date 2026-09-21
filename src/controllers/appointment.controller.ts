@@ -292,6 +292,7 @@ export const hasAppointmentConflict = async (
 
   const query: QueryFilter<IAppointment> & { $expr?: any } = {
     professional: professionalId,
+    status: "scheduled",
     start: { $lt: end },
     $expr: {
       $gt: [{ $add: ["$start", { $multiply: ["$duration", 60000] }] }, start],
