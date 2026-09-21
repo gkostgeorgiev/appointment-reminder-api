@@ -16,6 +16,7 @@ import { requestLogger } from "./middleware/requestLogger.js";
 import appointmentRoutes from "./routes/appointment.routes.js";
 import customerRoutes from "./routes/customer.routes.js";
 import devRoutes from "./routes/dev.routes.js";
+import guideRoutes from "./routes/guide.routes.js";
 import professionalRoutes from "./routes/professional.routes.js";
 
 const API_VERSION = "v1";
@@ -73,6 +74,11 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get("/docs-json", (_req, res) => {
   res.json(swaggerSpec);
 });
+
+// The frontend handoff bundle (docs/frontend/), served so a consumer fetches
+// the contract from the running API rather than keeping a copy that drifts.
+// Unversioned and outside /api/v1, alongside /docs and /health.
+app.use("/guide", guideRoutes);
 if (env.NODE_ENV === "development") {
   app.use("/api/dev", devRoutes);
 }

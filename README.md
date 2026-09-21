@@ -85,9 +85,34 @@ This ensures complete isolation between different professionals using the system
 
 # API Base URL
 
-Example:
+Production: `https://api.napomnyane.eu`
 
-/api/v1
+All API routes are versioned and live under `/api/v1`, e.g.
+`https://api.napomnyane.eu/api/v1/appointments`. Interactive docs are at
+`/docs`, and the OpenAPI spec at `/docs-json`.
+
+---
+
+# Building a client
+
+If you're building a frontend (or any other consumer) against this API, start
+with **[`docs/frontend/`](docs/frontend/)** rather than the OpenAPI spec alone.
+The spec describes paths and payloads correctly, but it can't express the
+cookie/CSRF handshake, the response envelope and its exceptions, the strict
+request bodies, or the UTC date semantics — all of which will bite you.
+
+That bundle is **served by this API** so consumers read the current contract
+rather than a copy that drifts:
+
+```
+GET /guide                    index of the bundle (JSON)
+GET /guide/API_GUIDE.md       the contract document
+GET /guide/api-types.ts       TypeScript types for every request/response
+GET /guide/api-client.ts      zero-dependency reference client
+```
+
+Live at <https://api.napomnyane.eu/guide>. Public and unauthenticated, like
+`/docs`.
 
 ---
 
