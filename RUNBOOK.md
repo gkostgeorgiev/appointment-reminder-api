@@ -53,19 +53,23 @@ Also point an external uptime monitor (e.g. UptimeRobot, Better Uptime) at `/hea
 # MongoDB backup & restore
 
 * **Paid Atlas tiers (M10+)**: enable Atlas's continuous backups (point-in-time restore). Restoring is a few clicks in the Atlas UI — restore to a new cluster first, verify, then cut over.
-* **Free M0 tier**: Atlas does **not** provide automated backups on M0. Until the project is upgraded off M0, take manual backups periodically:
+* **Free M0 tier**: Atlas does **not** provide automated backups on M0. Until the project is upgraded off M0 (not currently planned — see `.local/production-go-live-notes.md`), backups are automated outside Atlas instead: `.github/workflows/backup.yml` runs daily (`0 3 * * *` UTC) plus on-demand via `workflow_dispatch`, and:
 
-  ```
-  mongodump --uri="$MONGO_URI" --archive=backup-$(date +%F).gz --gzip
-  ```
+  1. Installs `mongodb-database-tools` on the runner.
+  2. Runs `mongodump --uri="$MONGO_BACKUP_URI" --archive="backup-<date>.gz" --gzip` against a dedicated **read-only** Atlas DB user (`backup-readonly`, scoped to just this database) — deliberately not the app's own read-write `MONGO_URI`, so a leaked backup credential can't write or delete production data.
+  3. Uploads the archive to a private Backblaze B2 bucket via `aws-cli` (B2's API is S3-compatible) — see `SECRETS.md` for the credentials involved.
 
-  Store the archive somewhere outside the Atlas project (e.g. encrypted cloud storage). Restore with:
+  Retention is a 30-day bucket lifecycle rule on the B2 side (auto-deletes anything older), not script logic — the bucket should always hold roughly the last 30 daily dumps, no manual pruning needed.
+
+  A failed scheduled run triggers GitHub's own automatic email to the repo owner — no additional alerting is wired up for this (it's a CI-only script, not app runtime, so it doesn't go through Sentry). Note GitHub auto-disables scheduled workflows after 60 days of zero repository activity; worth a glance at the Actions tab if this repo goes quiet for a while.
+
+  To restore, download the archive from the B2 bucket (`aws s3 cp "s3://$B2_BUCKET/backup-<date>.gz" . --endpoint-url "$B2_ENDPOINT"`, using the same endpoint/credentials as the workflow) and run:
 
   ```
   mongorestore --uri="$MONGO_URI" --archive=backup-<date>.gz --gzip
   ```
 
-  Given this DB holds patient-adjacent PII (customer name/phone/email — see `sentry.ts`'s scrubbing), don't skip this just because M0 makes it manual.
+  Given this DB holds patient-adjacent PII (customer name/phone/email — see `sentry.ts`'s scrubbing), don't skip this just because M0 makes it manual to set up.
 
 ---
 

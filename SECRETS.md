@@ -16,6 +16,8 @@ See [RUNBOOK.md](RUNBOOK.md) for the deployment target this policy assumes (Rend
 
 Render's per-service **Environment** tab (encrypted at rest, scoped to that service, never written to a file or git). Set each required var there directly for every environment (development/staging/production get separate Render services and separate secret values — see RUNBOOK.md).
 
+A second location: **GitHub Actions repository secrets** (Settings → Secrets and variables → Actions), used only by `.github/workflows/backup.yml` (see RUNBOOK.md's "MongoDB backup & restore"). Encrypted at rest, only exposed to workflow runs (masked in logs), never to `pull_request` runs from forks since that workflow has no `pull_request` trigger. Five secrets live there: `MONGO_BACKUP_URI` (a dedicated **read-only** Atlas DB user, `backup-readonly`, scoped to just this database — separate from the app's own read-write `MONGO_URI`), `B2_ACCESS_KEY_ID`, `B2_SECRET_ACCESS_KEY`, `B2_ENDPOINT`, `B2_BUCKET` (a Backblaze B2 application key restricted to a single bucket).
+
 Do not:
 
 * Put real values in `.env.example`.
@@ -50,6 +52,8 @@ Rotate at the provider first, then update the Render env var, then redeploy (or 
 * **`RESEND_API_KEY`** — rotate in the Resend dashboard. Affects password-reset/verification email sends only; a failure during rotation is already reported to Sentry without changing the client-facing response (see CLAUDE.md's "Error reporting" section) and Resend calls aren't retried automatically, so double-check no reset/verification emails were dropped during the rotation window.
 * **`SENTRY_DSN`** — not a traditional secret (it can only be used to *send* events to your project, not read them), but if it's ever treated as sensitive, regenerate it from the Sentry project settings.
 * **`CSRF`/`JWT_SECRET`-adjacent cookies** (`csrfToken`, `refreshToken`) — not env vars, so nothing to rotate here directly; they're invalidated per-user by the existing logout/password-change flows.
+* **`MONGO_BACKUP_URI`** — rotate the `backup-readonly` Atlas DB user's password (Database Access → edit user → Edit Password), then update the GitHub Actions secret. No downtime — this credential is only used once a day by the backup workflow, not by the running app.
+* **`B2_ACCESS_KEY_ID`/`B2_SECRET_ACCESS_KEY`** — in the Backblaze dashboard, delete the old application key and create a new one scoped to the same single bucket, then update both GitHub Actions secrets together (they're a pair — the old key stops working as soon as it's deleted).
 
 ---
 

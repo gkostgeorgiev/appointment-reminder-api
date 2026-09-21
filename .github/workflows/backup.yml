@@ -1,0 +1,47 @@
+name: Backup
+
+# Atlas M0 has no automated backups (see RUNBOOK.md's "MongoDB backup & restore"
+# section) so this does a daily mongodump + upload to Backblaze B2 instead.
+#
+# Note: GitHub auto-disables scheduled workflows after 60 days with zero
+# repository activity on the default branch - worth an occasional glance at
+# the Actions tab if this repo goes quiet for a while.
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install MongoDB Database Tools
+        run: |
+          CODENAME=$(lsb_release -cs)
+          case "$CODENAME" in
+            jammy) MDB_UBUNTU=ubuntu2204 ;;
+            noble) MDB_UBUNTU=ubuntu2404 ;;
+            focal) MDB_UBUNTU=ubuntu2004 ;;
+            *) echo "Unsupported Ubuntu codename: $CODENAME" >&2; exit 1 ;;
+          esac
+          VERSION=$(curl -fsSL https://api.github.com/repos/mongodb/mongo-tools/releases/latest | grep -m1 '"tag_name"' | cut -d '"' -f4)
+          curl -fsSL "https://fastdl.mongodb.org/tools/db/mongodb-database-tools-${MDB_UBUNTU}-x86_64-${VERSION}.deb" -o mongodb-database-tools.deb
+          sudo apt-get install -y ./mongodb-database-tools.deb
+
+      - name: Dump database
+        env:
+          MONGO_BACKUP_URI: ${{ secrets.MONGO_BACKUP_URI }}
+        run: mongodump --uri="$MONGO_BACKUP_URI" --archive="backup-$(date -u +%F).gz" --gzip
+
+      - name: Upload to Backblaze B2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.B2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.B2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          B2_ENDPOINT: ${{ secrets.B2_ENDPOINT }}
+          B2_BUCKET: ${{ secrets.B2_BUCKET }}
+        run: |
+          FILE="backup-$(date -u +%F).gz"
+          aws s3 cp "$FILE" "s3://$B2_BUCKET/$FILE" --endpoint-url "$B2_ENDPOINT"
