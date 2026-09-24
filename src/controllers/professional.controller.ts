@@ -27,6 +27,7 @@ import { generateToken } from "../utils/jwt.js";
 import { generateResetToken, hashResetToken } from "../utils/passwordReset.js";
 import { generateRefreshToken, hashRefreshToken } from "../utils/refreshToken.js";
 import {
+  changePasswordSchema,
   forgotPasswordSchema,
   loginProfessionalSchema,
   registerProfessionalSchema,
@@ -51,6 +52,7 @@ type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>["body"];
 type ResetPasswordInput = z.infer<typeof resetPasswordSchema>["body"];
 type VerifyEmailInput = z.infer<typeof verifyEmailSchema>["body"];
 type ResendVerificationInput = z.infer<typeof resendVerificationSchema>["body"];
+type ChangePasswordInput = z.infer<typeof changePasswordSchema>["body"];
 
 // @desc    Register professional
 // @route   POST /api/professionals/register
@@ -244,6 +246,48 @@ export const resetPassword = async (req: Request, res: Response) => {
   return sendResponse(res, 200, {
     message: "Password has been reset successfully. Please log in.",
   });
+};
+
+// @desc    Change password for the authenticated professional
+// @route   POST /api/professionals/change-password
+// @access  Private
+export const changePassword = async (req: Request, res: Response) => {
+  const { currentPassword, newPassword } = req.validated!
+    .body as ChangePasswordInput;
+
+  const professional = await Professional.findById(req.user!.userId);
+
+  if (!professional) {
+    throw new ErrorResponse("Invalid credentials", 401);
+  }
+
+  const isMatch = await professional.comparePassword(currentPassword);
+
+  if (!isMatch) {
+    throw new ErrorResponse("Invalid credentials", 401);
+  }
+
+  professional.password = newPassword;
+  await professional.save();
+
+  // The pre("save") hook already cleared the refresh token as a side effect
+  // of the password change, along with everyone else's outstanding access
+  // token. Re-issue a fresh pair here so the caller - who just proved they
+  // own the account with currentPassword - doesn't get logged out by their
+  // own request; only *other* sessions are ended.
+  const token = generateToken({
+    userId: professional.id,
+    email: professional.email,
+  });
+
+  const { rawToken: refreshToken, tokenHash, expiresAt } = generateRefreshToken();
+  professional.refreshTokenHash = tokenHash;
+  professional.refreshTokenExpires = expiresAt;
+  await professional.save({ validateModifiedOnly: true });
+
+  setAuthCookies(res, token, refreshToken);
+
+  return sendResponse(res, 200, { message: "Password changed successfully." });
 };
 
 // @desc    Verify email using a verification token

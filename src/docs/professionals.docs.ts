@@ -429,3 +429,75 @@
  *                       type: string
  *                       example: Logged out
  */
+
+/**
+ * @swagger
+ * /api/v1/professionals/change-password:
+ *   post:
+ *     summary: Change password for the authenticated professional
+ *     tags: [Professionals]
+ *     security:
+ *       - cookieAuth: []
+ *     description: >
+ *       Requires the current password, unlike `/reset-password` - proof of
+ *       the credential itself, not just control of the inbox. On success,
+ *       invalidates every other outstanding access token and refresh token
+ *       (via passwordChangedAt, same as reset-password), then re-issues
+ *       fresh `token`/`csrfToken`/`refreshToken` cookies so the caller's own
+ *       session stays logged in. Requires the `X-CSRF-Token` header (see the
+ *       parameter below). Rate-limited per authenticated user; only failed
+ *       attempts (wrong `currentPassword`) count against the limit.
+ *     parameters:
+ *       - in: header
+ *         name: X-CSRF-Token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Must match the `csrfToken` cookie's value, or the request is
+ *           rejected with 403.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 example: securePassword123
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *                 description: Must differ from currentPassword.
+ *                 example: newSecurePassword123
+ *     responses:
+ *       200:
+ *         description: Password changed successfully; fresh auth cookies are set
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [ok, status, data]
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                 status:
+ *                   type: integer
+ *                 data:
+ *                   type: object
+ *                   required: [message]
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: Password changed successfully.
+ *       400:
+ *         description: Validation failed (e.g. newPassword too short, or same as currentPassword)
+ *       401:
+ *         description: currentPassword does not match
+ *       429:
+ *         description: Too many password change attempts from this account
+ */

@@ -109,6 +109,13 @@ export interface ResetPasswordRequest {
   password: string;
 }
 
+/** `POST /change-password` — auth + CSRF required. On success, all three auth cookies are re-issued. */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  /** min 8 characters, must differ from currentPassword */
+  newPassword: string;
+}
+
 export interface VerifyEmailRequest {
   token: string;
 }

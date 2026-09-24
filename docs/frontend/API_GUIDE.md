@@ -65,7 +65,7 @@ All three are `Secure; SameSite=None`.
 
 Read `csrfToken` from `document.cookie` and set it as the `x-csrf-token` header on every mutation. Because the cookie is deliberately not `httpOnly`, this is a plain `document.cookie` read — there is no endpoint to fetch it from.
 
-The cookie is **re-issued with a new value on every login and every refresh**. Read it fresh at request time; do not cache it in a module variable at app start.
+The cookie is **re-issued with a new value on every login, every refresh, and every successful change-password**. Read it fresh at request time; do not cache it in a module variable at app start.
 
 ### 2.4 Token refresh
 
@@ -101,6 +101,17 @@ which returns a **non-enveloped** body:
 It returns only what is in the JWT — `userId` and `email`. It does **not** return `profession`, `createdAt`, or `isEmailVerified`. If the UI needs those, that is a backend change, not something to work around on the client.
 
 Use `GET /me` as the "am I logged in?" probe on app boot.
+
+### 2.6 Changing password while logged in
+
+```
+POST /api/v1/professionals/change-password    (auth + CSRF required)
+{ "currentPassword": "...", "newPassword": "..." }
+```
+
+Unlike `/reset-password`, this requires the account's *current* password, not an emailed token — it's for a logged-in settings screen, not the "forgot password" flow. `newPassword` must be at least 8 characters and different from `currentPassword`, or you get a `400`. A wrong `currentPassword` gives `401`. It's rate-limited per authenticated account (5 failed attempts per 15 minutes); a repeated wrong-password guess returns `429`.
+
+On success it responds `200 { "ok": true, "status": 200, "data": { "message": "..." } }` **and re-issues all three cookies** — the caller stays logged in on the current device. Every *other* session (and the previous refresh token) is invalidated server-side, so treat this the same as a login/refresh for the purpose of re-reading `csrfToken` afterward (§2.3).
 
 ---
 
@@ -222,7 +233,7 @@ Documents are serialized straight from Mongoose, so the id field is **`_id`**, n
 
 ### 4.3 Professional
 
-There is no profile read/update endpoint beyond `GET /me` (§2.5), and no change-password-while-logged-in endpoint — only the emailed reset flow. Plan the settings screen accordingly, or request those endpoints.
+There is no profile read/update endpoint beyond `GET /me` (§2.5) — it returns only `userId`/`email`, not `profession`/`isEmailVerified`/`createdAt`. Plan the settings screen accordingly, or request a profile endpoint. Changing password while logged in **is** supported — see §2.6.
 
 ---
 
@@ -288,6 +299,7 @@ Every account is hardcoded to `Europe/Sofia` server-side (`Professional.timezone
 | `POST /login`, per IP | 20 failed / 15 min |
 | `POST /login`, per submitted email | 5 failed / 15 min |
 | `POST /refresh`, per IP | 20 failed / 15 min |
+| `POST /change-password`, per authenticated account | 5 failed / 15 min |
 | `POST /forgot-password` | 5 / hour |
 | `POST /resend-verification` | 5 / hour |
 
@@ -314,6 +326,7 @@ All paths prefixed with `https://api.napomnyane.eu/api/v1`. **A** = requires aut
 | POST | `/professionals/refresh` | | no body; rotates all three cookies |
 | GET | `/professionals/me` | A | non-enveloped |
 | POST | `/professionals/logout` | A C | |
+| POST | `/professionals/change-password` | A C | `{ currentPassword, newPassword (min 8, ≠ currentPassword) }` → rotates all three cookies |
 | POST | `/professionals/forgot-password` | | `{ email }` |
 | POST | `/professionals/reset-password` | | `{ token, password (min 8) }` |
 
@@ -353,7 +366,6 @@ All paths prefixed with `https://api.napomnyane.eu/api/v1`. **A** = requires aut
 The fix belongs on the backend:
 
 - **No profile endpoint.** Nothing returns the professional's `profession`, `isEmailVerified` or `createdAt`; `GET /me` only reflects the JWT. A settings screen has nothing to render.
-- **No change-password-while-authenticated endpoint.** A logged-in user who knows their current password still has to go out through the emailed forgot-password flow to change it. (The pre-login reset flow itself works fine — this is about the in-app one.)
 - **No account-deletion or data-export endpoint.**
 - **No way to trigger, cancel, or resend a reminder manually.**
 - `GET /me` and the auth middleware's `401`/`403` bodies are not enveloped.

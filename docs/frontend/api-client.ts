@@ -24,6 +24,7 @@ import type {
   ApiFailure,
   Appointment,
   AppointmentUnpopulated,
+  ChangePasswordRequest,
   CreateAppointmentRequest,
   CreateCustomerRequest,
   Customer,
@@ -272,6 +273,11 @@ export const auth = {
     request<void>("/professionals/login", { method: "POST", body }),
 
   logout: () => request<MessageResponse>("/professionals/logout", { method: "POST" }),
+
+  /** Requires the current password, not a reset token. Re-issues all three
+   *  cookies on success — re-read csrfToken afterward, same as login/refresh. */
+  changePassword: (body: ChangePasswordRequest) =>
+    request<MessageResponse>("/professionals/change-password", { method: "POST", body }),
 
   /** Not enveloped, and carries only what's in the JWT (userId + email). */
   me: () => request<MeResponse>("/professionals/me", { unenveloped: true }),

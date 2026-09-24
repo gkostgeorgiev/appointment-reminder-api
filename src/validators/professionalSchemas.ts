@@ -68,6 +68,26 @@ export const resetPasswordSchema = z.object({
     .strict(),
 });
 
+export const changePasswordSchema = z.object({
+  body: z
+    .object({
+      currentPassword: z
+        .string()
+        .min(1)
+        .openapi({ example: "securePassword123" }),
+
+      newPassword: z
+        .string()
+        .min(8)
+        .openapi({ example: "newSecurePassword123" }),
+    })
+    .strict()
+    .refine((data) => data.newPassword !== data.currentPassword, {
+      message: "New password must be different from the current password",
+      path: ["newPassword"],
+    }),
+});
+
 export const verifyEmailSchema = z.object({
   body: z
     .object({

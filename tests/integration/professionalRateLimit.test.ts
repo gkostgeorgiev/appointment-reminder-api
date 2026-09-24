@@ -11,6 +11,7 @@ import request from "supertest";
 import type { Express } from "express";
 import type { MongoMemoryReplSet } from "mongodb-memory-server";
 import { setupTestApp, teardownTestApp, clearDatabase } from "../helpers/setup.js";
+import { registerAndLogin, TEST_PASSWORD } from "../helpers/auth.js";
 
 vi.mock("../../src/services/smsService.js", () => ({
   sendSms: vi.fn().mockResolvedValue(undefined),
@@ -62,6 +63,42 @@ describe("POST /professionals/refresh rate limiting", () => {
       status: 429,
       message: "Too many refresh attempts, please try again later.",
     });
+  });
+});
+
+describe("POST /professionals/change-password rate limiting", () => {
+  // Runs before the login-rate-limiting block below: that block deliberately
+  // exhausts the shared per-IP login limiter for the rest of this file, and
+  // registerAndLogin needs a real, successful login to set up each case here.
+  it("429s after enough failed attempts from the same authenticated account", async () => {
+    const pro = await registerAndLogin(app, "ratelimit-changepw@example.com");
+
+    let lastRes;
+
+    for (let i = 0; i < 6; i++) {
+      lastRes = await pro.authed.post("/api/v1/professionals/change-password").send({
+        currentPassword: "wrong-password",
+        newPassword: "NewPassword123!",
+      });
+    }
+
+    expect(lastRes!.status).toBe(429);
+    expect(lastRes!.body).toMatchObject({
+      ok: false,
+      status: 429,
+      message: "Too many password change attempts. Please try again later.",
+    });
+  });
+
+  it("does not count a successful change-password against the limit", async () => {
+    const pro = await registerAndLogin(app, "ratelimit-changepw2@example.com");
+
+    const res = await pro.authed.post("/api/v1/professionals/change-password").send({
+      currentPassword: TEST_PASSWORD,
+      newPassword: "NewPassword123!",
+    });
+
+    expect(res.status).toBe(200);
   });
 });
 

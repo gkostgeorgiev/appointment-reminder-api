@@ -96,8 +96,6 @@ Do not paper over these — they are tracked as backend work. See `API_GUIDE.md`
 
 - No profile endpoint. `GET /professionals/me` returns only the JWT contents
   (`userId`, `email`) — not `profession` or `isEmailVerified`.
-- No change-password-while-authenticated endpoint. A logged-in user can only
-  change their password via the emailed forgot-password flow.
 - No manual trigger/cancel/resend for reminders.
 - Date filters are date-only and UTC-anchored, so a local-timezone "today"
   cannot be expressed exactly. Compute local day boundaries client-side and

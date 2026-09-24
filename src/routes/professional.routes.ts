@@ -1,6 +1,7 @@
 import { Request, Router } from "express";
 import rateLimit from "express-rate-limit";
 import {
+  changePassword,
   forgotPassword,
   loginProfessional,
   logoutProfessional,
@@ -14,6 +15,7 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
 import { catchAsync } from "../utils/catchAsync.js";
 import {
+  changePasswordSchema,
   forgotPasswordSchema,
   loginProfessionalSchema,
   registerProfessionalSchema,
@@ -99,6 +101,24 @@ const refreshLimiter = rateLimit({
   },
 });
 
+// Keyed by the authenticated user, not IP/email like the limiters above -
+// currentPassword turns this endpoint into a guessing oracle against an
+// already-authenticated session, so only failed attempts (a wrong
+// currentPassword) count against the budget.
+const changePasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: {
+    ok: false,
+    status: 429,
+    message: "Too many password change attempts. Please try again later.",
+  },
+  keyGenerator: (req) => req.user?.userId ?? "unknown",
+});
+
 router.post(
   "/register",
   validate(registerProfessionalSchema),
@@ -127,6 +147,14 @@ router.get(
 );
 
 router.post("/logout", authMiddleware, catchAsync(logoutProfessional));
+
+router.post(
+  "/change-password",
+  authMiddleware,
+  changePasswordLimiter,
+  validate(changePasswordSchema),
+  catchAsync(changePassword),
+);
 
 router.post(
   "/forgot-password",
