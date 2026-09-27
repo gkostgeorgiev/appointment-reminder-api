@@ -22,9 +22,12 @@ vi.mock("../../src/services/emailService.js", () => ({
 
 let app: Express;
 let mongod: MongoMemoryReplSet;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Appointment: any;
 
 beforeAll(async () => {
   ({ app, mongod } = await setupTestApp());
+  ({ Appointment } = await import("../../src/models/Appointment.js"));
 });
 
 afterEach(async () => {
@@ -74,5 +77,44 @@ describe("GET /appointments/:id", () => {
     const getRes = await pro.authed.get("/api/v1/appointments/not-an-object-id");
 
     expect(getRes.status).toBe(400);
+  });
+});
+
+describe("PATCH /appointments/:id on a past, auto-completed appointment", () => {
+  it("still lets the professional record it as a no-show", async () => {
+    const pro = await registerAndLogin(app, "pastappt1@example.com");
+
+    const customerRes = await pro.authed
+      .post("/api/v1/customers")
+      .send({ firstName: "Maria", lastName: "Ivanova", phone: "359888400002" });
+    const customerId = customerRes.body.data._id;
+
+    const start = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const apptRes = await pro.authed
+      .post("/api/v1/appointments")
+      .send({ customer: customerId, start, duration: 30 });
+    const appointmentId = apptRes.body.data._id;
+
+    // Simulate the appointment having already taken place and been picked
+    // up by the auto-completion job, without waiting on real time.
+    await Appointment.updateOne(
+      { _id: appointmentId },
+      {
+        $set: {
+          start: new Date(Date.now() - 60 * 60 * 1000),
+          status: "completed",
+        },
+      },
+    );
+
+    const patchRes = await pro.authed
+      .patch(`/api/v1/appointments/${appointmentId}`)
+      .send({ status: "no-show" });
+
+    expect(patchRes.status).toBe(200);
+    expect(patchRes.body.data.status).toBe("no-show");
+
+    const getRes = await pro.authed.get(`/api/v1/appointments/${appointmentId}`);
+    expect(getRes.body.data.status).toBe("no-show");
   });
 });

@@ -23,6 +23,7 @@ The system is designed as a **multi-tenant SaaS backend**, allowing professional
 * Appointment conflict detection
 * Automatic SMS reminders
 * Cron-based reminder worker
+* Automatic completion of past appointments
 * Input validation with Zod
 * Centralized error handling
 * Production security middleware
@@ -384,6 +385,8 @@ completed
 cancelled
 no-show
 
+`scheduled` appointments are completed automatically once their end time (`start + duration`) has passed — see "Appointment Auto-completion" below. The professional can also set `status` explicitly at any time via `PATCH`, including on a past appointment (e.g. to record `no-show` or `cancelled` instead).
+
 ---
 
 ## Create Appointment
@@ -508,6 +511,18 @@ Cron schedule:
 ```
 
 The worker checks every 5 minutes.
+
+---
+
+# Appointment Auto-completion
+
+A `scheduled` appointment is marked `completed` automatically once its end time (`start + duration`) has passed. This runs as its own cron job, independent of the reminder worker:
+
+```
+*/5 * * * *
+```
+
+Unlike the reminder job, this one runs on **every** instance — it's a single idempotent conditional database update with no external side effect (no SMS, no email), so there's no need for a single-worker lock. Only appointments still `scheduled` at the moment the job writes are touched, so a professional's own status change (`cancelled`, `no-show`, or manually confirming `completed`) via `PATCH /api/v1/appointments/:id` is never overwritten.
 
 ---
 

@@ -110,6 +110,8 @@ const appointmentSchema = new Schema(
 appointmentSchema.index({ professional: 1, start: 1, reminderSent: 1 });
 appointmentSchema.index({ reminderSent: 1, start: 1 });
 appointmentSchema.index({ professional: 1, customer: 1, start: 1 });
+// Appointment auto-completion job queries (src/jobs/appointmentCompletionJob.ts).
+appointmentSchema.index({ status: 1, start: 1 });
 
 export const Appointment = model<IAppointment>(
   "Appointment",

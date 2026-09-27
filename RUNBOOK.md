@@ -82,7 +82,7 @@ Mongoose's default `autoIndex: true` (unchanged in `src/config/db.ts`) builds ev
 Current indexes:
 
 * `Customer`: unique compound `{ professional, phone }`
-* `Appointment`: `{ professional, start, reminderSent }` (calendar queries), `{ reminderSent, start }` (reminder worker poll)
+* `Appointment`: `{ professional, start, reminderSent }` (calendar queries), `{ reminderSent, start }` (reminder worker poll), `{ status, start }` (auto-completion job poll)
 
 If the `Customer`/`Appointment` collections ever grow large enough that a startup index build becomes disruptive (blocking connect, or building a large index under load), switch to `autoIndex: false` in `mongoose.connect()` and run `Model.syncIndexes()` explicitly as a one-off deploy step, so index builds happen on your schedule rather than on every restart.
 
@@ -92,6 +92,7 @@ If the `Customer`/`Appointment` collections ever grow large enough that a startu
 
 * `errorHandler.ts` reports to Sentry only for `statusCode >= 500` — expected 4xxs are noise-free by design (see CLAUDE.md's "Error reporting" section for the full policy, including the deliberate email-delivery exceptions).
 * `reminderJob.ts` reports both a failed tick (`Appointment.find` failure) and a failed per-appointment send to Sentry.
+* `appointmentCompletionJob.ts` reports a failed tick (`Appointment.updateMany` failure) to Sentry.
 * A reminder that exhausts `MAX_REMINDER_ATTEMPTS` (4) fires a **distinct** `Sentry.captureMessage("Reminder permanently failed...")` — treat this as a real, actionable alert (a patient will not get their reminder), not just noise alongside transient failures still retrying.
 * `server.ts`'s `uncaughtException`/`unhandledRejection` handlers report to Sentry, flush (bounded 2s), then shut down — a spike of these means the process is crash-looping.
 * Point an uptime monitor at `/health` (see above) for infra-level (not app-level) alerting.
@@ -118,3 +119,5 @@ If a change ever does need a real data migration, that migration needs its own r
 This is a cost/waste concern, not a correctness one: `reminderJob.ts` claims each appointment atomically before sending (`reminderClaimedUntil`, a short TTL lease — see the comment at the top of the claim logic), so a second worker racing on the same appointment finds nothing left to claim and skips it rather than double-sending. If this invariant is ever accidentally violated (e.g. Render autoscaling spins up a second instance with the same env), reminders stay correct but Twilio gets polled and (occasionally) called twice for no benefit.
 
 Keep autoscaling disabled on the reminder-worker-enabled service, or run the reminder worker as a separate, single-instance Render service (with `RUN_REMINDER_WORKER=true` only there) if the web tier is ever scaled horizontally.
+
+This requirement does **not** apply to the appointment auto-completion job (`src/jobs/appointmentCompletionJob.ts`) — it runs unconditionally on every instance, with no env var gating it and no lease to coordinate. It's a single idempotent conditional `updateMany` with no external side effect, so any number of instances running it concurrently is harmless.

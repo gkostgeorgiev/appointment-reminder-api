@@ -20,7 +20,7 @@ const docsGlob = path
 // OpenAPI structure. Keep it in sync with docs/frontend/API_GUIDE.md, which
 // is the long-form version.
 const description = `
-Multi-tenant appointment scheduling with automatic SMS reminders.
+Multi-tenant appointment scheduling with automatic SMS reminders and automatic completion of past appointments.
 
 **Full frontend integration guide:** <https://api.napomnyane.eu/guide> — served
 by this API so it can never drift from the implementation.

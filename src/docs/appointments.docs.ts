@@ -320,7 +320,12 @@
  *       - cookieAuth: []
  *     description: >
  *       Requires the `X-CSRF-Token` header (see the header parameter
- *       below).
+ *       below). A `scheduled` appointment is also completed automatically,
+ *       server-side, once its end time (`start + duration`) passes - this
+ *       endpoint is only needed to set a different status (e.g. `no-show`
+ *       or `cancelled`) or to override that automatic completion. `start`
+ *       is only future-validated when a new one is supplied, so a
+ *       status-only update works on a past appointment too.
  *     parameters:
  *       - in: path
  *         name: id

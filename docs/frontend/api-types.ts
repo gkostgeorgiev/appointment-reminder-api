@@ -199,6 +199,8 @@ interface AppointmentBase {
   duration: number;
   service?: string;
   notes?: string;
+  /** Flips "scheduled" -> "completed" automatically (server-side, within
+   *  ~5 min of start + duration) if it's not set to something else first. */
   status: AppointmentStatus;
   reminderSent: boolean;
   reminderAttempts: number;

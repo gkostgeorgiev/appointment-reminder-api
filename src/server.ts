@@ -9,6 +9,7 @@ import { initSentry } from "./config/sentry.js";
 import { connectDB, disconnectDB } from "./config/db.js";
 import { logger } from "./config/logger.js";
 import { startReminderJob } from "./jobs/reminderJob.js";
+import { startAppointmentCompletionJob } from "./jobs/appointmentCompletionJob.js";
 
 initSentry();
 
@@ -24,6 +25,9 @@ const onListen = () => {
   );
   if (env.NODE_ENV !== "test" && env.RUN_REMINDER_WORKER) {
     startReminderJob();
+  }
+  if (env.NODE_ENV !== "test") {
+    startAppointmentCompletionJob();
   }
 };
 
